@@ -448,6 +448,7 @@ function drawHUD() {
   // audio
   const mx = W - 18 - INSET.r; r(ctx, C.ink, mx, 6, 12, 11); r(ctx, AUDIO.muted ? '#777' : C.cyan, mx + 2, 10, 2, 3); r(ctx, AUDIO.muted ? '#777' : C.cyan, mx + 4, 8, 2, 7);
   if (!AUDIO.muted) { r(ctx, C.cyan, mx + 8, 8, 1, 7); } else r(ctx, C.red, mx + 7, 11, 4, 1);
+  if (location.hash === '#audio') textS('AUDIO ' + AUDIO.state(), 8 + INSET.l, 42, C.white);
   const hint = level.hints.find(h => p.x >= h.x && p.x < h.until); if (hint) { const hw = textW(hint.s) + 12; r(ctx, 'rgba(23,16,28,.72)', (W - hw) / 2 | 0, 24, hw, 15); textC(hint.s, 28, C.white); }
 }
 function drawControls() {
@@ -562,16 +563,20 @@ const AUDIO = (() => {
   api.unlock = () => {
     try {
       if (!ac) {
+        try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* non supportato */ }   // suona anche in modalita' silenziosa
         const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
         ac = new AC(); master = ac.createGain(); master.gain.value = api.muted ? 0 : .8; master.connect(ac.destination);
         noiseBuf = ac.createBuffer(1, ac.sampleRate * .3, ac.sampleRate); const dat = noiseBuf.getChannelData(0); for (let i = 0; i < dat.length; i++) dat[i] = Math.random() * 2 - 1;
-        const sil = ac.createBufferSource(); sil.buffer = ac.createBuffer(1, 1, 22050); sil.connect(ac.destination); sil.start(0);
         timer = setInterval(tick, 80);
       }
-      if (ac.state !== 'running') ac.resume();
+      if (ac.state !== 'running') {
+        const sil = ac.createBufferSource(); sil.buffer = ac.createBuffer(1, 1, ac.sampleRate); sil.connect(ac.destination); sil.start(0);
+        const pr = ac.resume(); if (pr && pr.catch) pr.catch(() => {});
+      }
     } catch (e) { /* senza audio il gioco funziona comunque */ }
   };
   api.playing = false;
+  api.state = () => (ac ? ac.state : 'off');
   api.setMuted = m => { api.muted = m; if (master) master.gain.value = m ? 0 : .8; };
   api.suspend = () => { if (ac && ac.state === 'running') ac.suspend(); };
   api.sfx = n => {
@@ -615,14 +620,16 @@ function action() {
   else if (state === 'won' && stateT > 1.2 && armed) { armed = false; reset(); setState('play'); }
 }
 window.addEventListener('touchstart', e => {
-  e.preventDefault(); AUDIO.unlock();
+  if (state === 'play' || state === 'ending') e.preventDefault();   // su titolo e riepilogo il tocco resta un vero click: iOS sblocca l'audio
+  AUDIO.unlock();
   if (state === 'won' && stateT > 1.2) armed = true;
   const b = canvas.getBoundingClientRect();
   if (state === 'play') for (const t of e.changedTouches) if (t.clientX - b.left > b.width - 56 && t.clientY - b.top < 50) AUDIO.setMuted(!AUDIO.muted);
   readTouches(e);
 }, { passive: false });
 window.addEventListener('touchmove', e => { e.preventDefault(); readTouches(e); }, { passive: false });
-window.addEventListener('touchend', e => { e.preventDefault(); AUDIO.unlock(); if (e.touches.length === 0) action(); readTouches(e); }, { passive: false });
+window.addEventListener('click', () => AUDIO.unlock());
+window.addEventListener('touchend', e => { AUDIO.unlock(); if (e.touches.length === 0) action(); readTouches(e); }, { passive: false });
 window.addEventListener('touchcancel', readTouches);
 window.addEventListener('mousedown', () => { AUDIO.unlock(); if (state === 'won' && stateT > 1.2) armed = true; if (!TOUCH || state !== 'play') action(); });
 window.addEventListener('keydown', e => {
