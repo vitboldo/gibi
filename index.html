@@ -22,7 +22,7 @@
 <script>
 'use strict';
 /* ========= Costanti ========= */
-const H = 216, GROUND = 176, LEVEL_W = 4600, STEP = 1 / 60;
+const H = 216, GROUND = 176, STEP = 1 / 60;
 const RUN = 112, GRAV = 900, JUMP_V = -335, COYOTE = 0.11, BUFFER = 0.13, FOLLOW_DELAY = 26;
 const C = { pink:'#ff2e7e', yellow:'#ffd23f', cyan:'#38d6d0', ink:'#17101c', paper:'#fff6e0', red:'#e8344e', white:'#ffffff' };
 
@@ -156,6 +156,11 @@ function enemySprite(kind, step) {
       r(g, '#d99a48', 3, 2, 12, 2); r(g, '#d99a48', 1, 4, 16, 3); r(g, '#f6d9a0', 5, 3, 1, 1); r(g, '#f6d9a0', 10, 3, 1, 1); r(g, '#f6d9a0', 13, 5, 1, 1);
       r(g, '#5fbf4a', 0, 7, 18, 2); r(g, '#b83a38', 1, 9, 16, 2); r(g, '#f4d24a', 2, 11, 14, 1);
       r(g, '#c9863a', 1, 12, 16, 4); eyes(g, 5, 4, 5); r(g, C.ink, 7, 14, 4, 1);
+    } else if (kind === 'gelato') {
+      r(g, '#ff8fb8', 3, 0, 12, 7); r(g, '#ff8fb8', 2, 2, 14, 5); r(g, '#ffd0e0', 5, 1, 3, 2);
+      r(g, '#e0a858', 3, 7, 12, 3); r(g, '#e0a858', 4, 10, 10, 2); r(g, '#e0a858', 5, 12, 8, 2); r(g, '#e0a858', 6, 14, 6, 2);
+      r(g, '#b57f3c', 6, 8, 1, 1); r(g, '#b57f3c', 11, 8, 1, 1); r(g, '#b57f3c', 8, 11, 1, 1);
+      eyes(g, 5, 3, 5); r(g, C.ink, 7, 9, 4, 1);
     } else {
       r(g, '#1e55c8', 1, 0, 16, 16); r(g, '#fff', 2, 1, 14, 14); r(g, '#1e55c8', 3, 2, 12, 12);
       r(g, '#fff', 5, 3, 2, 10); r(g, '#fff', 7, 3, 5, 1); r(g, '#fff', 7, 7, 5, 1); r(g, '#fff', 11, 4, 2, 3);
@@ -166,8 +171,10 @@ function enemySprite(kind, step) {
     r(g, C.ink, 4, a + 2, 3, 1); r(g, C.ink, 10, b + 2, 3, 1);
   });
 }
-const ENEMY = {}; ['birra', 'panino', 'parcheggio'].forEach(k => ENEMY[k] = [enemySprite(k, 0), enemySprite(k, 1)]);
-const PRICE = { birra: 9, panino: 12, parcheggio: 15 };
+const ENEMY = {}; ['birra', 'panino', 'parcheggio', 'gelato'].forEach(k => ENEMY[k] = [enemySprite(k, 0), enemySprite(k, 1)]);
+const PRICE = { birra: 9, panino: 12, parcheggio: 15, gelato: 6 };
+const WATER = mk(8, 13, g => { r(g, '#fff', 3, 0, 2, 2); r(g, '#bfefff', 2, 2, 4, 1); r(g, '#58c4ec', 1, 3, 6, 9); r(g, '#e6fbff', 2, 4, 1, 6); r(g, '#fff', 1, 6, 6, 2); r(g, '#2d8fc0', 1, 12, 6, 1); });
+const GIBI_FACE = mk(16, 13, g => rows(g, GIBI_HEAD, GIBI_PAL));
 
 const PICK = mk(9, 10, g => rows(g, ['..#####..', '.#yyyyy#.', '#yyyyyyy#', '#yyWyyyy#', '#yyyyyyy#', '.#yyyyy#.', '.#yyyyy#.', '..#yyy#..', '...#y#...', '....#....'],
   { '#': C.ink, y: C.yellow, W: '#fff' }));
@@ -209,12 +216,20 @@ const BG_GROUND = mk(256, 56, g => {
   r(g, '#e3c48c', 0, 16, 256, 2); r(g, '#b5875a', 0, 18, 256, 38);
   for (let i = 0; i < 180; i++) r(g, i % 3 ? '#9f7449' : '#c99a6a', Math.floor(rnd() * 256), 19 + Math.floor(rnd() * 37), 2, 1);
 });
+const BG_GRASS = mk(256, 56, g => {
+  r(g, '#a9b45f', 0, 0, 256, 16); for (let i = 0; i < 90; i++) r(g, i % 2 ? '#c2c070' : '#8c9c4c', Math.floor(rnd() * 256), Math.floor(rnd() * 16), 2, 1);
+  r(g, '#d6d28a', 0, 16, 256, 2); r(g, '#7e8e45', 0, 18, 256, 38);
+  for (let i = 0; i < 180; i++) r(g, i % 3 ? '#6e7e3a' : '#94a455', Math.floor(rnd() * 256), 19 + Math.floor(rnd() * 37), 2, 1);
+});
+const SUNSET = ['#2b3a78', '#55478f', '#8a4f9a', '#c9568c', '#ef7a6c', '#f9a85e', '#fcd07a'];
+const hex = c => [1, 3, 5].map(i => parseInt(c.substr(i, 2), 16));
+const mix = (a, b, t) => { const A = hex(a), B = hex(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',') + ')'; };
 const SKY = ['#3fb9d6', '#57c3d8', '#7bcfd8', '#a0d9d4', '#c6e2cc', '#e7e6be', '#f8e3a8'];
 const BG_CAR_COLS = ['#d65a5a', '#5a7dd6', '#e0b84a', '#4fae8a', '#9a6fce', '#e5e5e5', '#d97a3a'];
 
 /* ========= Livello ========= */
-function buildLevel() {
-  const L = { solids: [], puddles: [], picks: [], enemies: [], signs: [], bubbles: [], hints: [], bgCars: [] };
+function buildLevel(ph) {
+  const L = { solids: [], puddles: [], picks: [], enemies: [], signs: [], bubbles: [], hints: [], bgCars: [], shades: [], waters: [], w: 4600, heat: false, crowdX: 4250, crowdN: 30, ground: BG_GROUND };
   const car = (x, col, w = 54) => L.solids.push({ t: 'car', x, y: GROUND - 26, w, h: 26, col });
   const bar = (x, w = 30) => L.solids.push({ t: 'bar', x, y: GROUND - 14, w, h: 14 });
   const box = (x, h, w = 32) => L.solids.push({ t: 'box', x, y: GROUND - h, w, h });
@@ -225,6 +240,34 @@ function buildLevel() {
   const row = (x, y, n, dx = 16) => { for (let i = 0; i < n; i++) pick(x + i * dx, y); };
   const sign = (x, s) => L.signs.push({ x, s });
 
+  if (ph === 1) {
+    const cool = (x) => L.solids.push({ t: 'cool', x, y: GROUND - 14, w: 26, h: 14 });
+    const shade = (x, w) => L.shades.push({ x, w });
+    const water = (x, y = GROUND - 18) => L.waters.push({ x, y, got: false });
+    L.w = 3520; L.heat = true; L.ground = BG_GRASS; L.crowdX = 2880; L.crowdN = 46; L.gateX = 3190; L.endX = 3230; L.stage = true;
+    sign(150, "38 GRADI ALL'OMBRA");
+    water(250); shade(330, 110); row(345, GROUND - 16, 4, 20);
+    cool(520); arc(498, GROUND - 26); water(610);
+    foe('gelato', 780, 700, 860); arc(750, GROUND - 34, 5, 16, 22);
+    water(930); shade(1040, 120); bar(1240); arc(1216, GROUND - 26);
+    sign(1140, 'QUALE OMBRA?');
+    cool(1340); cool(1366); water(1356, GROUND - 34);
+    foe('birra', 1510, 1430, 1590); arc(1480, GROUND - 34, 5, 16, 22);
+    water(1660); shade(1740, 100); box(1900, 16); box(1932, 32); box(1964, 16); water(1944, GROUND - 52); row(1908, GROUND - 28, 1); row(1972, GROUND - 28, 1);
+    foe('gelato', 2150, 2070, 2230); arc(2120, GROUND - 34, 5, 16, 22);
+    water(2290); shade(2370, 130); bar(2570); arc(2546, GROUND - 26);
+    sign(2440, 'IL SOLE CALA. FORSE.');
+    foe('birra', 2710, 2630, 2790); arc(2680, GROUND - 34, 5, 16, 22);
+    water(2860); cool(2960); row(3040, GROUND - 16, 5, 20);
+    L.bubbles = [
+      { x: 60, s: 'MA QUANTO MANCA A STASERA?' },
+      { x: 1000, s: 'OMBRA! OMBRA!' },
+      { x: 2060, s: 'SONO DIVENTATO BRODO.' },
+      { x: 2990, s: 'ECCO IL PALCO!' },
+    ];
+    L.hints = [{ x: -99, until: 300, s: 'CERCA ACQUA E OMBRA' }];
+    return L;
+  }
   sign(190, 'IPPODROMO 4 KM');
   row(120, GROUND - 16, 4, 22);
   bar(310); arc(286, GROUND - 26);
@@ -276,14 +319,28 @@ function buildLevel() {
 
 /* ========= Stato ========= */
 const TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-let state = 'title', stateT = 0, level, cam = 0, shake = 0;
+let state = 'title', stateT = 0, level, cam = 0, shake = 0, phase = 0, heat = 0, heatSaid = false, banner = null, m = null;
 let p, floats = [], parts = [], history = [], bubble = null, nextBubble = 0, stats;
 const input = { left: false, right: false, jump: false, jumpPressed: false, keyL: false, keyR: false, keyJ: false, tL: false, tR: false, tJ: false };
 
+const TRACK_OF = ['parcheggio', 'caldo', 'mogwai'];
+const BANNERS = ['IL PARCHEGGIO', 'IL CALDO', 'I MOGWAI'];
+function startPhase(ph) {
+  phase = ph; if (ph === 0) stats = null;
+  input.tL = input.tR = input.tJ = input.jump = false; AUDIO.setTrack(TRACK_OF[ph]); AUDIO.playing = true;
+  banner = { s: BANNERS[ph], t: 2.2 };
+  if (ph === 2) {
+    if (!stats) stats = { euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0 };
+    m = { p: 0, open: 1, asleep: 0, cres: 0, cresDone: false, msg: null, msgT: 0, msgI: 0, wake: 0 }; stats.naps = 0;
+    setState('mogwai'); return;
+  }
+  reset(); setState('play');
+}
 function reset() {
-  level = buildLevel();
+  level = buildLevel(phase); heat = 0; heatSaid = false;
   p = { x: 40, y: GROUND - 24, w: 12, h: 24, vx: 0, vy: 0, on: true, dir: 1, coyote: 0, buffer: 0, inv: 0, kb: 0, anim: 0 };
-  stats = { euro: 60, sventate: 0, picks: 0, picksTot: level.picks.length, hits: 0, t: 0 };
+  if (!stats) stats = { euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0 };
+  stats.picksTot += level.picks.length;
   floats = []; parts = []; bubble = null; nextBubble = 0; cam = 0;
   history = Array.from({ length: FOLLOW_DELAY }, () => ({ x: 14, y: p.y, f: 'idle', dir: 1 }));
 }
@@ -298,7 +355,7 @@ const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a
 function updatePlayer(dt, autoWalk) {
   const dirIn = autoWalk ? 1 : (input.left === input.right ? 0 : (input.right ? 1 : -1));
   const inMud = p.on && level.puddles.some(m => p.x + p.w > m.x + 2 && p.x < m.x + m.w - 2);
-  const target = dirIn * RUN * (inMud ? .55 : 1);
+  const target = dirIn * RUN * (inMud ? .55 : 1) * (level.heat && heat >= 100 ? .62 : 1);   // col troppo caldo si cammina piano, ma non si perde mai
   if (p.kb > 0) { p.kb -= dt; }
   else { const acc = p.on ? 1100 : 800; p.vx += Math.sign(target - p.vx) * Math.min(Math.abs(target - p.vx), acc * dt); }
   if (dirIn) p.dir = dirIn;
@@ -322,8 +379,35 @@ function updatePlayer(dt, autoWalk) {
   input.jumpPressed = false;
 }
 
+const MOG_LINES = [[.02, 'CHE ATMOSFERA...'], [.2, 'È ANCORA IL PRIMO PEZZO?'], [.4, 'BELLISSIMO. PERÒ LENTO.'], [.72, 'SONO TORNATI LENTI...'], [.9, 'RESISTI! POI CI SONO I CURE!']];
+function stepMogwai(dt) {
+  const pressed = input.jumpPressed; input.jumpPressed = false;
+  if (m.msgT > 0) m.msgT -= dt;
+  if (m.wake > 0) m.wake -= dt;
+  if (m.asleep > 0) {
+    m.asleep -= dt;
+    if (m.asleep <= 0) { m.open = 1; m.p = Math.max(0, m.p - .06); shake = .3; m.wake = 1; m.msg = 'GIBI! SVEGLIA!'; m.msgT = 2; AUDIO.sfx('stomp'); }
+    return;
+  }
+  m.p += dt / 34;
+  if (m.msgI < MOG_LINES.length && m.p >= MOG_LINES[m.msgI][0]) { m.msg = MOG_LINES[m.msgI][1]; m.msgT = 3.2; m.msgI++; }
+  if (!m.cresDone && m.p >= .58) { m.cresDone = true; m.cres = 3.4; AUDIO.setTrack('crescendo'); m.msg = 'IL CRESCENDO!'; m.msgT = 3.2; }
+  if (m.cres > 0) {
+    m.cres -= dt; m.open = 1; shake = .1;
+    if (m.cres <= 0) AUDIO.setTrack('mogwai');
+  } else {
+    m.open -= (.075 + .13 * m.p) * dt;
+    if (pressed) { m.open = Math.min(1, m.open + .24); AUDIO.sfx('blink'); }
+    if (m.open <= 0) { m.open = 0; m.asleep = 1.9; stats.naps++; }
+  }
+  if (m.p >= 1) { AUDIO.sfx('win'); setState('won'); }
+}
 function step(dt) {
   stateT += dt;
+  if (banner && (banner.t -= dt) <= 0) banner = null;
+  if (shake > 0 && phase === 2) shake -= dt;
+  if (state === 'mogwai') { stepMogwai(dt); return; }
+  if (phase === 2) return;
   if (state === 'play' || state === 'ending') {
     stats.t += dt;
     updatePlayer(dt, state === 'ending');
@@ -332,6 +416,16 @@ function step(dt) {
     // Plettri
     for (const k of level.picks) if (!k.got && hit({ x: p.x - 3, y: p.y - 3, w: p.w + 6, h: p.h + 6 }, { x: k.x, y: k.y, w: 9, h: 10 })) {
       k.got = true; stats.picks++; AUDIO.sfx('pick'); burst(k.x + 4, k.y + 5, [C.yellow, '#fff'], 4, 50);
+    }
+    // Il caldo
+    if (level.heat) {
+      const cx = p.x + p.w / 2, inShade = level.shades.some(z => cx > z.x && cx < z.x + z.w);
+      heat = Math.max(0, Math.min(100, heat + (inShade ? -24 : 11) * dt));
+      for (const w of level.waters) if (!w.got && hit({ x: p.x - 3, y: p.y - 3, w: p.w + 6, h: p.h + 6 }, { x: w.x, y: w.y, w: 8, h: 13 })) {
+        w.got = true; heat = Math.max(0, heat - 38); float('AAAH!', w.x - 8, w.y - 8, C.cyan); AUDIO.sfx('pick'); burst(w.x + 4, w.y + 6, ['#58c4ec', '#fff'], 8, 70);
+      }
+      if (heat >= 100 && !heatSaid && state === 'play') { heatSaid = true; say('TROPPO CALDO... SERVE ACQUA!', 2.6); }
+      if (heat < 60) heatSaid = false;
     }
     // Mestierate
     for (const e of level.enemies) {
@@ -365,17 +459,18 @@ function step(dt) {
   floats.forEach(f => { f.t -= dt; f.y -= 22 * dt; }); floats = floats.filter(f => f.t > 0);
   parts.forEach(q => { q.t -= dt; q.vy += 300 * dt; q.x += q.vx * dt; q.y += q.vy * dt; }); parts = parts.filter(q => q.t > 0);
   if (shake > 0) shake -= dt;
-  const camT = Math.max(0, Math.min(LEVEL_W - W, p.x + 6 - W * .36));
+  const camT = Math.max(0, Math.min(level.w - W, p.x + 6 - W * .36));
   cam += (camT - cam) * Math.min(1, dt * 7);
 }
 function spriteFrame(o) { if (!o.on) return 'jump'; if (Math.abs(o.vx) < 8) return 'idle'; return Math.floor(o.anim) % 4; }
 
 /* ========= Disegno ========= */
+const dayT = () => (level.heat ? Math.min(1, p.x / level.endX) : 0);   // nel caldo il pomeriggio scorre verso il tramonto
 function drawSky() {
-  const hBand = 26; SKY.forEach((c, i) => r(ctx, c, 0, i * hBand, W, hBand + 1));
-  const sx = Math.round(W * .74), sy = 34;
-  for (let i = -24; i <= 24; i++) { const w = Math.round(Math.sqrt(Math.max(0, 576 - i * i))); r(ctx, 'rgba(255,240,170,.35)', sx - w, sy + i, w * 2, 1); }
-  for (let i = -15; i <= 15; i++) { const w = Math.round(Math.sqrt(Math.max(0, 225 - i * i))); r(ctx, '#fff4b0', sx - w, sy + i, w * 2, 1); }
+  const t = dayT(), hBand = 26; SKY.forEach((c, i) => r(ctx, t ? mix(c, SUNSET[i], t) : c, 0, i * hBand, W, hBand + 1));
+  const sx = Math.round(W * (.74 - t * .14)), sy = Math.round(34 + t * 92), halo = t ? 'rgba(255,190,120,.35)' : 'rgba(255,240,170,.35)', sun = t ? mix('#fff4b0', '#ff6a3c', t) : '#fff4b0';
+  for (let i = -24; i <= 24; i++) { const w = Math.round(Math.sqrt(Math.max(0, 576 - i * i))); r(ctx, halo, sx - w, sy + i, w * 2, 1); }
+  for (let i = -15; i <= 15; i++) { const w = Math.round(Math.sqrt(Math.max(0, 225 - i * i))); r(ctx, sun, sx - w, sy + i, w * 2, 1); }
 }
 function tile(img, par, y, tw) { let x = -Math.floor((cam * par) % tw); for (; x < W; x += tw) ctx.drawImage(img, x, y); }
 const sx = x => Math.round(x - cam);
@@ -389,6 +484,7 @@ function drawSign(s) {
 function drawSolid(s) {
   const x = sx(s.x); if (x > W || x + s.w < 0) return;
   if (s.t === 'car') drawCar(ctx, x, s.y, s.w, s.h, s.col);
+  else if (s.t === 'cool') { r(ctx, '#2d7fc0', x, s.y + 3, s.w, s.h - 3); r(ctx, '#f2f4f6', x - 1, s.y, s.w + 2, 4); r(ctx, '#1d5f96', x, s.h + s.y - 2, s.w, 2); r(ctx, '#f2f4f6', x + s.w / 2 - 4, s.y + 6, 8, 3); }
   else if (s.t === 'bar') {
     const c = '#d5d9de', d = '#7f868f';
     r(ctx, d, x + 2, s.y + 12, 6, 2); r(ctx, d, x + s.w - 8, s.y + 12, 6, 2);
@@ -400,7 +496,24 @@ function drawSolid(s) {
     r(ctx, C.pink, x + 6, s.y + s.h - 6, 5, 2); r(ctx, '#fff', x + 13, s.y + s.h - 6, 3, 2);
   }
 }
+function drawShade(z) {
+  const x = sx(z.x); if (x > W || x + z.w < 0) return;
+  r(ctx, 'rgba(23,16,50,.3)', x, GROUND - 76, z.w, 76);
+  r(ctx, '#3a3040', x + 2, GROUND - 76, 3, 76); r(ctx, '#3a3040', x + z.w - 5, GROUND - 76, 3, 76);
+  r(ctx, C.ink, x - 3, GROUND - 88, z.w + 6, 13);
+  for (let i = 0; i < z.w + 4; i += 12) r(ctx, Math.floor(i / 12) % 2 ? C.paper : C.pink, x - 2 + i, GROUND - 87, Math.min(12, z.w + 4 - i), 11);
+}
+function drawStage() {
+  const x = sx(level.gateX), w = 230; if (x > W + 20 || x + w < -20) return;
+  r(ctx, '#14111c', x, GROUND - 128, 12, 128); r(ctx, '#14111c', x + w - 12, GROUND - 128, 12, 128); r(ctx, '#14111c', x - 6, GROUND - 138, w + 12, 16);
+  r(ctx, '#241d30', x + 12, GROUND - 122, w - 24, 96); r(ctx, '#312845', x + 12, GROUND - 26, w - 24, 26);
+  r(ctx, '#3d2f55', x + 62, GROUND - 112, 106, 60); r(ctx, C.pink, x + 64, GROUND - 110, 102, 56);
+  text('FIRENZE ROCK', x + 80, GROUND - 86, '#fff');
+  for (let i = 0; i < 9; i++) r(ctx, i % 3 === 0 ? C.yellow : (i % 3 === 1 ? C.cyan : C.pink), x + 10 + i * 25, GROUND - 124, 6, 4);
+  [x + 14, x + w - 40].forEach(sp => { r(ctx, '#0d0b13', sp, GROUND - 78, 26, 52); r(ctx, '#3a3444', sp + 8, GROUND - 70, 10, 10); r(ctx, '#3a3444', sp + 6, GROUND - 52, 14, 14); });
+}
 function drawGate() {
+  if (level.stage) return drawStage();
   const x = sx(level.gateX); if (x > W + 100 || x < -160) return;
   r(ctx, '#2a2030', x, GROUND - 90, 8, 90); r(ctx, '#2a2030', x + 110, GROUND - 90, 8, 90);
   r(ctx, C.ink, x - 6, GROUND - 106, 130, 24); r(ctx, C.pink, x - 4, GROUND - 104, 126, 20);
@@ -408,8 +521,8 @@ function drawGate() {
   for (let i = 0; i < 6; i++) r(ctx, i % 2 ? C.yellow : C.cyan, x + 6 + i * 20, GROUND - 80, 6, 7);
 }
 function drawCrowd() {
-  for (let i = 0; i < 30; i++) {
-    const wx = 4250 + i * 13 + (i * 7) % 5, x = sx(wx); if (x > W || x < -10) continue;
+  for (let i = 0; i < level.crowdN; i++) {
+    const wx = level.crowdX + i * 13 + (i * 7) % 5, x = sx(wx); if (x > W || x < -10) continue;
     const bob = Math.sin(performance.now() * .006 + i) > .3 ? 1 : 0;
     const top = 146 - bob + (i % 3), shirt = ['#2b1b26', '#23262e', '#7a2340', '#1f3a40'][i % 4], skin = [SKIN, SKIN_D][i % 2];
     r(ctx, shirt, x - 1, top + 8, 11, 8); r(ctx, '#20202a', x, top + 16, 9, 160 - top - 3);   // busto e gambe
@@ -449,7 +562,12 @@ function drawHUD() {
   const mx = W - 18 - INSET.r; r(ctx, C.ink, mx, 6, 12, 11); r(ctx, AUDIO.muted ? '#777' : C.cyan, mx + 2, 10, 2, 3); r(ctx, AUDIO.muted ? '#777' : C.cyan, mx + 4, 8, 2, 7);
   if (!AUDIO.muted) { r(ctx, C.cyan, mx + 8, 8, 1, 7); } else r(ctx, C.red, mx + 7, 11, 4, 1);
   if (location.hash === '#audio') textS('AUDIO ' + AUDIO.state(), 8 + INSET.l, 42, C.white);
-  const hint = level.hints.find(h => p.x >= h.x && p.x < h.until); if (hint) { const hw = textW(hint.s) + 12; r(ctx, 'rgba(23,16,28,.72)', (W - hw) / 2 | 0, 24, hw, 15); textC(hint.s, 28, C.white); }
+  if (level.heat) {
+    const hx = 8 + INSET.l, bw2 = 70;
+    textS('CALDO', hx, 22, C.white); r(ctx, C.ink, hx + 32, 22, bw2 + 2, 7); r(ctx, 'rgba(255,255,255,.4)', hx + 33, 23, bw2, 5);
+    r(ctx, heat >= 100 ? C.red : mix('#38d6d0', '#e8344e', heat / 100), hx + 33, 23, Math.round(bw2 * heat / 100), 5);
+  }
+  const hint = level.hints.find(h => p.x >= h.x && p.x < h.until); if (hint) { const hy = level.heat ? 36 : 24, hw = textW(hint.s) + 12; r(ctx, 'rgba(23,16,28,.72)', (W - hw) / 2 | 0, hy, hw, 15); textC(hint.s, hy + 4, C.white); }
 }
 function drawControls() {
   if (!TOUCH) return;
@@ -465,13 +583,14 @@ function drawWorld() {
   drawSky();
   tile(BG_FAR, .12, 0, 640);
   tile(BG_MID, .42, 0, 512);
-  tile(BG_GROUND, 1, 160, 256);
+  tile(level.ground, 1, 160, 256);
   ctx.globalAlpha = .55;
   for (const c of level.bgCars) { const x = sx(c.x); if (x < W && x > -60) drawCar(ctx, x, 142, 46, 24, c.col, true); }
   ctx.globalAlpha = 1;
   drawCrowd();
-  level.signs.forEach(drawSign);
   drawGate();
+  level.shades.forEach(drawShade);
+  level.signs.forEach(drawSign);
   for (const m of level.puddles) { const x = sx(m.x); if (x < W && x + m.w > 0) { r(ctx, '#4b90b0', x + 3, GROUND, m.w - 6, 5); r(ctx, '#7fc0d6', x + 6, GROUND, m.w - 12, 2); r(ctx, '#d6f0f6', x + 9 + (Math.floor(performance.now() / 300) % 6), GROUND + 1, 8, 1); } }
   level.solids.forEach(drawSolid);
   const bobT = performance.now() * .005;
@@ -482,7 +601,10 @@ function drawWorld() {
     const tag = PRICE[e.kind] + '€', tw = textW(tag) + 6; const tx = x + 8 - tw / 2 | 0;
     r(ctx, C.ink, tx, e.y - 13, tw, 11); r(ctx, C.red, tx + 1, e.y - 12, tw - 2, 9); text(tag, tx + 3, e.y - 11, '#fff');
   }
+  for (const w of level.waters) if (!w.got) { const x = sx(w.x); if (x > -12 && x < W) ctx.drawImage(WATER, x, Math.round(w.y + Math.sin(bobT + w.x * .05) * 1.5)); }
   drawPlayer();
+  if (level.heat && dayT() > 0) { r(ctx, `rgba(255,110,60,${(dayT() * .16).toFixed(3)})`, 0, 0, W, H); }
+  if (level.heat && heat > 70) { r(ctx, `rgba(232,52,78,${((heat - 70) / 30 * .2).toFixed(3)})`, 0, 0, W, H); }
   parts.forEach(q => r(ctx, q.col, sx(q.x) | 0, q.y | 0, 2, 2));
   floats.forEach(f => textS(f.s, sx(f.x), f.y, f.col));
   drawBubble();
@@ -508,25 +630,76 @@ function drawTitle() {
   ctx.save(); ctx.translate(W / 2 - 34, 124); ctx.scale(2, 2); ctx.drawImage(GIBI[f], 0, 0); ctx.restore();
   ctx.save(); ctx.translate(W / 2 + 34, 124); ctx.scale(-2, 2); ctx.drawImage(LUI[f], -16 + 0, 0); ctx.restore();
   if (Math.floor(performance.now() / 500) % 2) textC(TOUCH ? 'TOCCA PER INIZIARE' : 'PREMI SPAZIO PER INIZIARE', 186, C.yellow);
-  textC('PROTOTIPO: IL PARCHEGGIO', 200, '#a896b4');
+  textC('PROTOTIPO: FINO AI MOGWAI', 200, '#a896b4');
 }
 function drawWon() {
   ctx.fillStyle = `rgba(23,16,28,${Math.min(.92, stateT * 1.6)})`; ctx.fillRect(0, 0, W, H);
   if (stateT < .4) return;
   ransom('OK!', 18, 4);
-  textC('SEI ARRIVATA ALL\'IPPODROMO', 72, C.white, 1);
-  const lines = [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['MESTIERATE SVENTATE', stats.sventate], ['EURO RIMASTI', stats.euro + '€']];
+  textC(['SEI ARRIVATA ALL\'IPPODROMO', 'HAI RESISTITO FINO A SERA', stats.naps ? 'HAI DORMITO SOLO UN PO\'' : 'NON HAI CHIUSO OCCHIO'][phase], 72, C.white, 1);
+  const lines = phase === 2 ? [['PISOLINI', stats.naps || 0], ['PLETTRI TOTALI', stats.picks], ['EURO RIMASTI', stats.euro + '€']]
+    : [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['MESTIERATE SVENTATE', stats.sventate], ['EURO RIMASTI', stats.euro + '€']];
   lines.forEach(([a, b], i) => { const y = 92 + i * 14, x = Math.round(W / 2 - 100); text(a, x, y, '#c7b8d2'); const v = String(b); text(v, x + 200 - textW(v), y, C.yellow); });
-  textC('ORA VIENE IL DIFFICILE: IL CALDO.', 146, C.cyan);
-  if (stateT > 1.2 && Math.floor(performance.now() / 500) % 2) textC(TOUCH ? 'TOCCA PER RIGIOCARE' : 'PREMI SPAZIO PER RIGIOCARE', 172, C.white);
+  textC(['ORA VIENE IL DIFFICILE: IL CALDO.', 'ORA I MOGWAI. NON ADDORMENTARTI.', 'IN ARRIVO: I CURE E LA FUGA IN MOBIKE.'][phase], 146, C.cyan);
+  const verb = phase === 2 ? 'RIGIOCARE' : 'CONTINUARE';
+  if (stateT > 1.2 && Math.floor(performance.now() / 500) % 2) textC((TOUCH ? 'TOCCA PER ' : 'PREMI SPAZIO PER ') + verb, 172, C.white);
+}
+const MOG_SKY = ['#120e2c', '#1a1338', '#241744', '#31194e', '#421c56', '#5a2058', '#6d2a58'];
+function drawMogwai() {
+  const now = performance.now(), cres = m.cres > 0, flash = cres && Math.floor(now / 90) % 2;
+  MOG_SKY.forEach((c, i) => r(ctx, cres ? mix(c, flash ? '#ff2e7e' : '#38d6d0', .45) : c, 0, i * 26, W, 27));
+  // il palco lontano e le sue luci lente
+  const sc = W / 2;
+  r(ctx, '#0b0914', sc - 120, 70, 240, 90); r(ctx, '#0b0914', sc - 130, 60, 260, 10);
+  for (let i = 0; i < 5; i++) {
+    const bx = sc - 100 + i * 50, sway = Math.sin(now * (cres ? .012 : .0006) + i * 1.7) * 34, a = cres ? .4 : .12;
+    for (let y = 0; y < 100; y += 2) { const w = 2 + y * .16; r(ctx, `rgba(${i % 2 ? '56,214,208' : '255,46,126'},${a})`, bx + sway * y / 100 - w, 70 + y, w * 2, 2); }
+  }
+  // il pubblico visto da dietro
+  r(ctx, '#120d1c', 0, 176, W, H - 176);
+  for (let i = 0; i < 24; i++) { const cx = (i * 29 + (i % 3) * 7) % (W + 20) - 10, cy = 166 + (i * 13) % 12 + (Math.sin(now * .0015 + i) > .5 ? 1 : 0); r(ctx, '#0a0712', cx, cy, 14, 12); r(ctx, '#0a0712', cx - 5, cy + 11, 24, 50); }
+  // Gibi in primo piano: le palpebre sono la sfida
+  const nod = Math.round((1 - m.open) * 10 + Math.sin(now * .0012) * 1.5), hx = Math.round(sc - 64), hy = 40 + nod, k = 8;
+  r(ctx, '#2b1b26', hx + 28, hy + 104 + 8, 72, 80); r(ctx, SKIN, hx + 36, hy + 96, 56, 18);
+  r(ctx, '#0e0e12', hx + 44, hy + 112, 40, 4); r(ctx, '#e6e0d4', hx + 60, hy + 116, 8, 8);
+  r(ctx, '#efe6cf', hx + 34, hy + 110, 7, 80);   // manico della tote bag
+  ctx.drawImage(GIBI_FACE, hx, hy, 16 * k, 13 * k);
+  const eyesOpen = m.asleep > 0 ? 0 : m.open, lid = Math.round((1 - eyesOpen) * 16);
+  [5, 10].forEach(col => {
+    const ex = hx + col * k, ey = hy + 8 * k;
+    if (lid > 0) r(ctx, SKIN_D, ex - 2, ey - 1, 2 * k + 4, lid + 1);
+    r(ctx, C.ink, ex - 2, ey - 2 + lid, 2 * k + 4, 2);
+  });
+  // lui dorme già
+  const lx = Math.round(sc + 74), ly = H - 76 + Math.round(Math.sin(now * .002) * 1.5);
+  ctx.drawImage(LUI.idle, lx, ly, 48, 78); r(ctx, SKIN, lx + 15, ly + 21, 6, 3); r(ctx, SKIN, lx + 30, ly + 21, 6, 3); r(ctx, C.ink, lx + 15, ly + 23, 6, 1); r(ctx, C.ink, lx + 30, ly + 23, 6, 1);
+  const zz = Math.floor(now / 700) % 3; for (let i = 0; i <= zz; i++) text('Z', lx + 40 + i * 7, ly - 2 - i * 9, '#c7b8d2', 1 + (i > 1 ? 1 : 0));
+  // sopra di tutto: progressi e avvisi
+  textS('MOGWAI', 8 + INSET.l, 9, C.white);
+  const bw = Math.min(150, W * .42), bx = Math.round((W - bw) / 2);
+  r(ctx, C.ink, bx - 1, 9, bw + 2, 7); r(ctx, 'rgba(255,255,255,.35)', bx, 10, bw, 5); r(ctx, C.cyan, bx, 10, Math.round(bw * m.p), 5);
+  if (m.asleep > 0) {
+    r(ctx, 'rgba(10,6,24,.86)', 0, 0, W, H);
+    const t = 1.9 - m.asleep, jy = Math.round(Math.abs(Math.sin(t * 3)) * -22), sx0 = Math.round(W / 2 - 12);
+    r(ctx, '#3c3460', sx0 - 70, 150, 164, 2);
+    r(ctx, '#f4f0e6', sx0, 128 + jy, 24, 14); r(ctx, '#f4f0e6', sx0 + 2, 125 + jy, 20, 3); r(ctx, '#2c2438', sx0 + 22, 126 + jy, 8, 9); r(ctx, '#fff', sx0 + 26, 128 + jy, 2, 2);
+    r(ctx, '#2c2438', sx0 + 3, 142 + jy, 2, 7); r(ctx, '#2c2438', sx0 + 19, 142 + jy, 2, 7);
+    textC('Z Z Z . . .', 70, '#c7b8d2', 2);
+    return;
+  }
+  if (m.p < .16) { const s = TOUCH ? 'TOCCA PER TENERE GLI OCCHI APERTI' : 'PREMI SPAZIO PER TENERE GLI OCCHI APERTI', hw = textW(s) + 12; r(ctx, 'rgba(23,16,28,.8)', (W - hw) / 2 | 0, 22, hw, 15); textC(s, 26, C.white); }
+  else if (m.open < .32 && !cres && Math.floor(now / 200) % 2) { textC('TOCCA! TOCCA!', 26, C.yellow, 2, C.ink); }
+  if (m.msg && m.msgT > 0) { const hw = Math.min(W - 12, textW(m.msg) + 12), mx = (W - hw) / 2 | 0; r(ctx, C.ink, mx, 196, hw, 15); r(ctx, C.paper, mx + 1, 197, hw - 2, 13); textC(m.msg, 200, C.ink); }
 }
 function draw() {
   ctx.imageSmoothingEnabled = false;
   if (state === 'title') { drawTitle(); return; }
   ctx.save();
   if (shake > 0) ctx.translate(Math.round(Math.sin(performance.now() * .08) * 2), 0);
-  drawWorld(); ctx.restore();
+  if (phase === 2) drawMogwai(); else drawWorld();
+  ctx.restore();
   if (state === 'play' || state === 'ending') { drawHUD(); drawControls(); }
+  if (banner && state !== 'won') { const s = banner.s, hw = textW(s, 2) + 20; r(ctx, C.ink, (W - hw) / 2 | 0, 54, hw, 26); r(ctx, C.pink, ((W - hw) / 2 | 0) + 1, 55, hw - 2, 24); textC(s, 60, '#fff', 2); }
   if (state === 'won') drawWon();
 }
 
@@ -535,10 +708,22 @@ const AUDIO = (() => {
   let ac = null, master = null, nextT = 0, stepN = 0, timer = null;
   const api = { muted: false };
   const N = n => 440 * Math.pow(2, (n - 69) / 12);
-  // Basso pulsante e arpeggio in La minore, 4 battute
-  const BASS = [45, 45, 45, 45, 41, 41, 43, 43];
-  const LEAD = [69, 72, 76, 72, 69, 72, 76, 79, 65, 69, 72, 69, 67, 71, 74, 71,
-                69, 72, 76, 72, 81, 79, 76, 72, 65, 69, 72, 76, 74, 71, 67, 71];
+  // Musiche originali: una per fase. 0 nella melodia = pausa
+  const SLOW_LEAD = [62, 69, 74, 69, 65, 69, 72, 69, 60, 67, 72, 67, 67, 71, 74, 71, 62, 69, 74, 77, 65, 69, 72, 76, 60, 67, 72, 76, 67, 71, 74, 79];
+  const TRACKS = {
+    parcheggio: { bpm: 138, drums: 2, bassT: 'triangle', bassV: .2, bassD: .9, leadT: 'square', leadV: .045, leadD: .75,
+      bass: [45, 45, 45, 45, 41, 41, 43, 43],
+      lead: [69, 72, 76, 72, 69, 72, 76, 79, 65, 69, 72, 69, 67, 71, 74, 71, 69, 72, 76, 72, 81, 79, 76, 72, 65, 69, 72, 76, 74, 71, 67, 71] },
+    caldo: { bpm: 92, drums: 1, bassT: 'triangle', bassV: .18, bassD: 1.6, leadT: 'square', leadV: .03, leadD: 1.4,
+      bass: [45, 45, 43, 43, 41, 41, 40, 40],
+      lead: [69, 0, 72, 0, 76, 0, 74, 72, 67, 0, 71, 0, 74, 0, 72, 71, 65, 0, 69, 0, 72, 0, 71, 69, 64, 0, 68, 0, 71, 0, 74, 76] },
+    mogwai: { bpm: 58, drums: 0, bassT: 'sine', bassV: .2, bassD: 4, leadT: 'sine', leadV: .07, leadD: 2.6,
+      bass: [38, 38, 41, 41, 36, 36, 43, 43], lead: SLOW_LEAD },
+    crescendo: { bpm: 116, drums: 3, bassT: 'sawtooth', bassV: .17, bassD: 1, leadT: 'sawtooth', leadV: .07, leadD: 1.2,
+      bass: [38, 38, 41, 41, 36, 36, 43, 43], lead: SLOW_LEAD },
+  };
+  let track = TRACKS.parcheggio;
+  api.setTrack = n => { track = TRACKS[n]; stepN = 0; nextT = 0; };
   function tone(type, f, t, d, v, g0) {
     const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
     g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0008, t + d);
@@ -548,15 +733,18 @@ const AUDIO = (() => {
   function noise(t, d, v) { const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = noiseBuf; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(g); g.connect(master); s.start(t); s.stop(t + d); }
   function tick() {
     if (!ac || ac.state !== 'running' || !api.playing) return;
-    const sd = 60 / 138 / 2;
+    const sd = 60 / track.bpm / 2;
     if (nextT < ac.currentTime) nextT = ac.currentTime + .05;
     while (nextT < ac.currentTime + .25) {
       const i = stepN % 32;
-      tone('triangle', N(BASS[Math.floor(i / 4)]), nextT, sd * .9, .2);
-      tone('square', N(LEAD[i]), nextT, sd * .75, .045);
-      if (i % 4 === 0) tone('sine', 110, nextT, .1, .25);
-      if (i % 4 === 2) noise(nextT, .09, .1);
-      if (i % 2 === 1) noise(nextT, .025, .025);
+      if (i % 4 === 0 || track.drums >= 2) tone(track.bassT, N(track.bass[Math.floor(i / 4)]), nextT, sd * track.bassD, track.bassV);
+      if (track.lead[i]) tone(track.leadT, N(track.lead[i]), nextT, sd * track.leadD, track.leadV);
+      if (track.drums >= 2 && i % 4 === 0) tone('sine', 110, nextT, .1, .25);
+      if (track.drums === 1 && i % 8 === 0) tone('sine', 100, nextT, .12, .18);
+      if (track.drums >= 2 && i % 4 === 2) noise(nextT, .09, .1);
+      if (track.drums === 1 && i % 8 === 4) noise(nextT, .06, .05);
+      if (track.drums === 2 && i % 2 === 1) noise(nextT, .025, .025);
+      if (track.drums === 3) noise(nextT, .1, .07);
       nextT += sd; stepN++;
     }
   }
@@ -585,6 +773,7 @@ const AUDIO = (() => {
     if (n === 'pick') { tone('square', 988, t, .06, .06); tone('square', 1319, t + .06, .1, .06); }
     if (n === 'stomp') { const o = tone('square', 520, t, .18, .1); o.frequency.exponentialRampToValueAtTime(120, t + .16); noise(t, .1, .15); }
     if (n === 'hurt') { const o = tone('sawtooth', 240, t, .3, .1); o.frequency.exponentialRampToValueAtTime(70, t + .28); }
+    if (n === 'blink') tone('sine', 660, t, .06, .05);
     if (n === 'win') [69, 72, 76, 81].forEach((m, i) => tone('square', N(m), t + i * .12, .22, .08));
   };
   return api;
@@ -605,7 +794,8 @@ function syncInput() {
 function readTouches(e) {
   const b = canvas.getBoundingClientRect(), z = zones();
   input.tL = input.tR = input.tJ = false;
-  if (state === 'play' || state === 'ending') for (const t of e.touches) {
+  if (state === 'mogwai') { if (e.touches.length) input.tJ = true; }
+  else if (state === 'play' || state === 'ending') for (const t of e.touches) {
     const x = t.clientX - b.left, y = t.clientY - b.top;
     if (x > b.width - 56 && y < 50) continue;
     if (x >= b.width * .5) input.tJ = true;
@@ -615,12 +805,13 @@ function readTouches(e) {
   syncInput();
 }
 let armed = false;
+const START_PHASE = { '#caldo': 1, '#mogwai': 2 }[location.hash] || 0;   // scorciatoie per provare una fase
 function action() {
-  if (state === 'title') { reset(); setState('play'); AUDIO.playing = true; }
-  else if (state === 'won' && stateT > 1.2 && armed) { armed = false; reset(); setState('play'); }
+  if (state === 'title') startPhase(START_PHASE);
+  else if (state === 'won' && stateT > 1.2 && armed) { armed = false; startPhase(phase === 2 ? 0 : phase + 1); }
 }
 window.addEventListener('touchstart', e => {
-  if (state === 'play' || state === 'ending') e.preventDefault();   // su titolo e riepilogo il tocco resta un vero click: iOS sblocca l'audio
+  if (state === 'play' || state === 'ending' || state === 'mogwai') e.preventDefault();   // su titolo e riepilogo il tocco resta un vero click: iOS sblocca l'audio
   AUDIO.unlock();
   if (state === 'won' && stateT > 1.2) armed = true;
   const b = canvas.getBoundingClientRect();
@@ -631,7 +822,7 @@ window.addEventListener('touchmove', e => { e.preventDefault(); readTouches(e); 
 window.addEventListener('click', () => AUDIO.unlock());
 window.addEventListener('touchend', e => { AUDIO.unlock(); if (e.touches.length === 0) action(); readTouches(e); }, { passive: false });
 window.addEventListener('touchcancel', readTouches);
-window.addEventListener('mousedown', () => { AUDIO.unlock(); if (state === 'won' && stateT > 1.2) armed = true; if (!TOUCH || state !== 'play') action(); });
+window.addEventListener('mousedown', () => { AUDIO.unlock(); if (state === 'mogwai') input.jumpPressed = true; if (state === 'won' && stateT > 1.2) armed = true; if (!TOUCH || state !== 'play') action(); });
 window.addEventListener('keydown', e => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', ' '].includes(e.key)) e.preventDefault();
   AUDIO.unlock();
@@ -682,6 +873,6 @@ function frame(now) {
   draw();
 }
 reset();
-window.__gibi = { get state() { return state; }, get p() { return p; }, get stats() { return stats; }, get level() { return level; }, get W() { return W; } };
+window.__gibi = { get state() { return state; }, get p() { return p; }, get stats() { return stats; }, get level() { return level; }, get W() { return W; }, get phase() { return phase; }, get heat() { return heat; }, get m() { return m; } };
 requestAnimationFrame(frame);
 </script>
