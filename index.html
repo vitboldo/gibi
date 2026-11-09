@@ -394,6 +394,7 @@ const isWorld = () => phase === 0 || phase === 1 || phase === 4;
 const newStats = () => ({ euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0, naps: 0, salti: 0, buche: 0, spaventi: 0, sorpassi: 0, sveglie: 0, note: 0, noteTot: 0 });
 function startPhase(ph) {
   phase = ph; if (ph === 0) stats = null;
+  AUDIO.stopClip(); if (ph === 2 || ph === 3) AUDIO.loadClip('boys.mp3');   // la canzone si scarica durante i Mogwai
   input.tL = input.tR = input.tJ = input.jump = input.jumpPressed = false; AUDIO.setTrack(TRACK_OF[ph]); AUDIO.playing = true;
   banner = { s: BANNERS[ph], t: 2.2 };
   if (!stats) stats = newStats();
@@ -549,9 +550,9 @@ function stepBikeExtra(dt) {
   }
 }
 const CURE_SHOW = [[.6, 'FINALMENTE I CURE!'], [4.2, 'VI: SONO GIÀ LE 23:40...'], [7.4, 'VI: DOMANI SI LAVORA, PERÒ...']];
-const CURE_BOYS = [[3.2, 'VI: OK, AVEVI RAGIONE TU.'], [12, 'QUESTA LA CANTANO TUTTI!'], [22, 'VI: CHE SERATA...']];
+const CURE_BOYS = [[3.2, 'VI: OK, AVEVI RAGIONE TU.'], [12, 'QUESTA LA CANTANO TUTTI!'], [22, 'VI: CHE SERATA...'], [36, 'TUTTI A SALTARE!'], [50, 'VI: NON ANDIAMO PIÙ VIA PRIMA.']];
 const CURE_ESC = ['IL SÌ SCAPPA...', 'ANDARSENE PRIMA? SAREBBE DA SCEMI.', 'ORMAI ANCHE IL SÌ DICE NO.'];
-const BOYS_T = 30;
+const BOYS_T = 30, BOYS_SONG_T = 60;   // 30 s con la musica di riserva, 60 s con la canzone vera (boys.mp3)
 const noRect = () => ({ x: Math.round(W / 2) + 14, y: 108, w: 60, h: 22 });
 const yesRect = () => ({ x: cu.yes.x, y: cu.yes.y, w: 60, h: 22 });
 const inRect = (R, x, y, pad) => x > R.x - pad && x < R.x + R.w + pad && y > R.y - pad && y < R.y + R.h + pad;
@@ -564,7 +565,8 @@ function cureJump() {
 }
 function cureNo() {
   cu.mode = 'boys'; cu.t = 0; input.jumpPressed = false;
-  AUDIO.setTrack('boys'); AUDIO.sfx('win'); banner = { s: "BOYS DON'T CRY", t: 2.6 }; cureSay('VI: GIUSTO. RESTIAMO.');
+  cu.dur = AUDIO.playClip() ? BOYS_SONG_T : BOYS_T;   // se la canzone non è ancora pronta, parte la musica di riserva
+  if (cu.dur === BOYS_T) AUDIO.setTrack('boys'); AUDIO.sfx('win'); banner = { s: "BOYS DON'T CRY", t: 2.6 }; cureSay('VI: GIUSTO. RESTIAMO.');
 }
 function cureFlee(tx, ty) {
   const no = noRect(); let best = null;
@@ -600,7 +602,8 @@ function stepCure(dt) {
     if (cu.mi < 99) cu.mi = 99;
     const bi = cu.mi - 99; if (bi < CURE_BOYS.length && cu.t >= CURE_BOYS[bi][0]) { cureSay(CURE_BOYS[bi][1]); cu.mi++; }
     if (pressed) cureJump();
-    if (cu.t >= BOYS_T) { AUDIO.sfx('win'); setState('won'); }
+    if (cu.t >= cu.dur - 2.5 && !cu.fading) { cu.fading = true; AUDIO.fadeClip(2.5); }
+    if (cu.t >= cu.dur) { AUDIO.sfx('win'); setState('won'); }
   }
 }
 
@@ -997,7 +1000,7 @@ function drawCure() {
   cu.conf.forEach(q => r(ctx, q.col, q.x | 0, q.y | 0, 2, 2));
   // in alto
   textS('I CURE', 8 + INSET.l, 9, C.white);
-  if (boys) { const bw = Math.min(150, W * .42), bx = Math.round((W - bw) / 2); r(ctx, C.ink, bx - 1, 9, bw + 2, 7); r(ctx, 'rgba(255,255,255,.35)', bx, 10, bw, 5); r(ctx, C.pink, bx, 10, Math.round(bw * Math.min(1, cu.t / BOYS_T)), 5); }
+  if (boys) { const bw = Math.min(150, W * .42), bx = Math.round((W - bw) / 2); r(ctx, C.ink, bx - 1, 9, bw + 2, 7); r(ctx, 'rgba(255,255,255,.35)', bx, 10, bw, 5); r(ctx, C.pink, bx, 10, Math.round(bw * Math.min(1, cu.t / cu.dur)), 5); }
   else textS('23:4' + (cu.mode === 'ask' ? '2' : '1'), W - 40 - INSET.r, 9, C.yellow);
   if (cu.mode === 'show' && cu.t > 1.5 && stats.salti === 0) hintBox(TOUCH ? 'TOCCA PER SALTARE' : 'SPAZIO PER SALTARE');
   if (boys && cu.t > 2.6 && cu.t < 7 && stats.salti < 3) hintBox(TOUCH ? 'TOCCA PER SALTARE!' : 'SPAZIO PER SALTARE!');
@@ -1087,8 +1090,8 @@ function drawDrive() {
   if (dv.msg && dv.msgT > 0) msgBox(dv.msg, 26);
 }
 
-const FINE_LINES = ['NON MI HAI SALVATO DA UN MOSTRO.', 'MI HAI RIPORTATO A CASA, COME SEMPRE.', 'TI SEGUIREI IN CAPO AL MONDO.', 'SOPRATTUTTO SE GUIDI TU.'];
-const FINE_AT = [2.4, 5.6, 8.8, 12], FINE_READY = 16;
+const FINE_LINES = ['MI HAI RIPORTATO A CASA, COME SEMPRE.', 'TI SEGUIREI IN CAPO AL MONDO.', 'SOPRATTUTTO SE GUIDI TU.'];
+const FINE_AT = [2.4, 5.6, 8.8], FINE_LAST = FINE_AT[FINE_AT.length - 1], FINE_READY = FINE_LAST + 4;
 function drawFine() {
   const t = stateT, now = performance.now();
   NIGHT.forEach((c, i) => r(ctx, c, 0, i * 32, W, 33));
@@ -1097,7 +1100,7 @@ function drawFine() {
   r(ctx, '#24141e', 0, 36, W, 4); r(ctx, '#3b2230', 0, 40, W, 136);
   const home = Math.floor((W / 2 - 14) / 40);
   for (let i = 0; i * 40 + 14 < W; i++) [50, 76].forEach((y, j) => {
-    const x = i * 40 + 14, lit = (i * 7 + j * 3) % 5 === 0 || (i === home && j === 1 && t > FINE_AT[3] + 1.2);
+    const x = i * 40 + 14, lit = (i * 7 + j * 3) % 5 === 0 || (i === home && j === 1 && t > FINE_LAST + 1.2);
     r(ctx, '#24141e', x - 1, y - 1, 14, 18); r(ctx, lit ? '#ffcf7a' : '#1a0f16', x, y, 12, 16); r(ctx, '#2f4a3a', x - 4, y, 3, 16); r(ctx, '#2f4a3a', x + 13, y, 3, 16);
   });
   r(ctx, '#4a2a36', 0, 100, W, 76); r(ctx, '#24141e', 0, 100, W, 3);
@@ -1113,10 +1116,10 @@ function drawFine() {
   ctx.drawImage(GIBI.idle, Math.round(W / 4) - 44, 62);
   ctx.save(); ctx.translate(Math.round(W / 4) - 8, 62); ctx.scale(-1, 1); ctx.drawImage(LUI.idle, 0, 0); ctx.restore();
   ctx.restore();
-  if (t > FINE_AT[3] + 1) { const ht = (t - FINE_AT[3] - 1) % 3, hx = Math.round(W / 2 - 52), hy = Math.round(116 - ht * 14); if (ht < 2.4) ctx.drawImage(HEART, hx, hy, 14, 12); }
+  if (t > FINE_LAST + 1) { const ht = (t - FINE_LAST - 1) % 3, hx = Math.round(W / 2 - 52), hy = Math.round(116 - ht * 14); if (ht < 2.4) ctx.drawImage(HEART, hx, hy, 14, 12); }
   // il messaggio, una lettera alla volta
-  r(ctx, 'rgba(14,10,24,.72)', 0, 8, W, 64);
-  FINE_LINES.forEach((s, i) => { const n = Math.floor((t - FINE_AT[i]) * 22); if (n > 0) textC(s.slice(0, n).padEnd(s.length, ' '), 16 + i * 13, i === 3 ? C.yellow : C.white); });
+  r(ctx, 'rgba(14,10,24,.72)', 0, 8, W, 52);
+  FINE_LINES.forEach((s, i) => { const n = Math.floor((t - FINE_AT[i]) * 22); if (n > 0) textC(s.slice(0, n).padEnd(s.length, ' '), 18 + i * 13, i === FINE_LINES.length - 1 ? C.yellow : C.white); });
   if (t > FINE_READY) {
     ransom('FINE', 182, 2);
     if (Math.floor(now / 500) % 2) textC((TOUCH ? 'TOCCA PER ' : 'PREMI SPAZIO PER ') + 'RIGIOCARE', 206, '#c7b8d2');
@@ -1281,6 +1284,26 @@ const AUDIO = (() => {
     } catch (e) { /* senza audio il gioco funziona comunque */ }
   };
   api.playing = false;
+  // Canzone vera in mp3 (Boys Don't Cry a 8 bit): si suona con Web Audio, così passa dal volume e dal tasto muto
+  let clipBuf = null, clipSrc = null, clipGain = null, clipLoading = false;
+  api.loadClip = url => {
+    if (clipBuf || clipLoading || !ac || !window.fetch) return; clipLoading = true;
+    fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(b => new Promise((res, rej) => ac.decodeAudioData(b, res, rej)))
+      .then(buf => { clipBuf = buf; }).catch(() => {}).then(() => { clipLoading = false; });
+  };
+  api.playClip = () => {
+    if (!clipBuf || !ac) return false; api.stopClip();
+    clipGain = ac.createGain(); clipGain.gain.value = .9; clipGain.connect(master);
+    clipSrc = ac.createBufferSource(); clipSrc.buffer = clipBuf; clipSrc.connect(clipGain); clipSrc.start(); api.playing = false; return true;
+  };
+  api.fadeClip = d => {
+    if (!clipSrc) return; const t = ac.currentTime, s = clipSrc;
+    clipGain.gain.setValueAtTime(clipGain.gain.value, t); clipGain.gain.linearRampToValueAtTime(0, t + d);
+    setTimeout(() => { try { s.stop(); } catch (e) { /* già ferma */ } }, d * 1000 + 100); clipSrc = clipGain = null;
+  };
+  api.stopClip = () => { if (clipSrc) try { clipSrc.stop(); } catch (e) { /* già ferma */ } clipSrc = clipGain = null; };
+  api.clipReady = () => !!clipBuf;
   api.state = () => (ac ? ac.state : 'off');
   api.setMuted = m => { api.muted = m; if (master) master.gain.value = m ? 0 : .8; };
   api.suspend = () => { if (ac && ac.state === 'running') ac.suspend(); };
@@ -1412,6 +1435,6 @@ function frame(now) {
   draw();
 }
 reset();
-window.__gibi = { get state() { return state; }, get p() { return p; }, get stats() { return stats; }, get level() { return level; }, get W() { return W; }, get phase() { return phase; }, get heat() { return heat; }, get m() { return m; }, get cu() { return cu; }, get dv() { return dv; }, get stateT() { return stateT; } };
+window.__gibi = { get state() { return state; }, get p() { return p; }, get stats() { return stats; }, get level() { return level; }, get W() { return W; }, get phase() { return phase; }, get heat() { return heat; }, get m() { return m; }, get cu() { return cu; }, get dv() { return dv; }, get stateT() { return stateT; }, get clipReady() { return AUDIO.clipReady(); } };
 requestAnimationFrame(frame);
 </script>
