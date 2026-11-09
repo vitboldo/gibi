@@ -143,6 +143,29 @@ const FRAMES = ['idle', 0, 1, 2, 3, 'jump'];
 const GIBI = Object.fromEntries(FRAMES.map(f => [f, gibiFrame(f)]));
 const LUI = Object.fromEntries(FRAMES.map(f => [f, luiFrame(f)]));
 
+/* La Mobike: ruote arancioni e telaio grigio */
+function line(g, x0, y0, x1, y1, col) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) r(g, col, Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n)); }
+const BIKE = mk(28, 14, g => {
+  [6, 22].forEach(cx => { for (let a = 0; a < 32; a++) { const t = a / 32 * 6.283; r(g, '#f0641e', Math.round(cx + Math.cos(t) * 5), Math.round(8 + Math.sin(t) * 5)); } r(g, '#3a3640', cx, 8); });
+  const fr = '#c9ced6';
+  line(g, 6, 8, 12, 3, fr); line(g, 12, 3, 13, 9, fr); line(g, 13, 9, 6, 8, fr); line(g, 12, 4, 20, 4, fr); line(g, 13, 9, 20, 4, fr); line(g, 20, 2, 22, 8, fr);
+  r(g, '#20202a', 10, 2, 5, 1); r(g, '#20202a', 18, 1, 4, 1);   // sellino e manubrio
+  r(g, '#8f949e', 22, 2, 5, 4); r(g, '#c9ced6', 22, 2, 5, 1);   // cestino
+});
+/* Le teste viste da dietro, per il viaggio in macchina */
+const GIBI_BACK = mk(16, 18, g => rows(g, [
+  '......hHHh......', '.....HHHHHH.....', '.....HHhHHH.....', '......HHHH......', '...GKKKKKKKKG...', '...HHHHHHHHHH...',
+  '..HHHHHHhHHHHH..', '..HHHhHHHHHHHH..', '.sHHHHHHHHHHHHs.', '.sHHHHHHHHHHHHs.', '..HHHHHHHHHHHH..', '...HHHHHHHHHH...',
+  '.....SSSSSS.....', '.....SSSSSS.....', '....cSSSSSSc....', '..SSTTTTTTTTSS..', '.bSSTTTTTTTTSSS.', 'SbSSTTTTTTTTSSSS'],
+  { H: '#14121a', h: '#37333f', G: '#e8bd3f', K: '#0a0a10', s: SKIN_D, S: SKIN, c: '#0e0e12', T: '#2b1b26', b: '#35466f' }));
+const LUI_BACK_HEAD = mk(16, 14, g => rows(g, [
+  '...x.xx.x.xx....', '..xxxxxxxxxxx.x.', '.xxxxXxxxxxXxxx.', '.xxxxxxxxxxxxxx.', '.xxXxxxxxxxxxxx.', '.xxxxxxxxXxxxxx.',
+  'sxxxxxxxxxxxxxxs', 'sxxxxxxxxxxxxxxs', '.xxxxxxxxxxxxxx.', '.gxxxxxxxxxxxxg.', '..gxxxxxxxxxxg..', '...ggSSSSSSgg...',
+  '.....SSSSSS.....', '.....SSSSSS.....'], { x: '#1e1a1c', X: '#3a3236', g: '#a8a4a0', s: SKIN_D, S: SKIN }));
+const LUI_BACK_BODY = mk(16, 4, g => rows(g, ['..DDDDDDDDDDDD..', '.DDDDDDDDDDDDDD.', 'DDDDDDDDDDDDDDDD', 'DDDDDDDDDDDDDDDD'], { D: '#23262e' }));
+const HEART = mk(7, 6, g => rows(g, ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'], { '#': C.pink }));
+const OUR_CAR = '#8a8f99';   // colore della vostra macchina: da confermare
+
 /* Mestierate: i prezzi assurdi prendono vita */
 function eyes(g, x, y, gap) { r(g, '#fff', x, y, 3, 3); r(g, '#fff', x + gap, y, 3, 3); r(g, C.ink, x + 1, y + 1, 2, 2); r(g, C.ink, x + gap + 1, y + 1, 2, 2); r(g, C.ink, x, y - 1, 3, 1); r(g, C.ink, x + gap, y - 1, 3, 1); }
 function enemySprite(kind, step) {
@@ -216,6 +239,19 @@ const BG_GROUND = mk(256, 56, g => {
   r(g, '#e3c48c', 0, 16, 256, 2); r(g, '#b5875a', 0, 18, 256, 38);
   for (let i = 0; i < 180; i++) r(g, i % 3 ? '#9f7449' : '#c99a6a', Math.floor(rnd() * 256), 19 + Math.floor(rnd() * 37), 2, 1);
 });
+const BG_ROAD = mk(256, 56, g => {
+  r(g, '#8d8a92', 0, 0, 256, 16); for (let x = 0; x < 256; x += 32) r(g, '#77747d', x, 0, 1, 16);   // marciapiede
+  r(g, '#c8c4cc', 0, 16, 256, 2); r(g, '#3e3b45', 0, 18, 256, 38);
+  for (let i = 0; i < 120; i++) r(g, i % 2 ? '#47444f' : '#35323c', Math.floor(rnd() * 256), 19 + Math.floor(rnd() * 37), 2, 1);
+  for (let x = 0; x < 256; x += 64) r(g, '#d8d4c8', x + 8, 36, 30, 2);
+});
+const NIGHT = ['#0b0a24', '#121033', '#1a1540', '#22194a', '#2a1d52', '#33215a', '#3c2660'];
+function drawNightSky(yMax) {
+  const now = performance.now();
+  for (let i = 0; i < 70; i++) { const x = (i * 97 + 13) % W, y = (i * 53) % yMax; if (Math.sin(now * .0015 + i * 1.3) > -.4) r(ctx, i % 5 ? '#8f86b0' : '#fff', x, y, 1, 1); }
+  const mx = Math.round(W * .82); for (let j = -8; j <= 8; j++) { const w = Math.round(Math.sqrt(64 - j * j)); r(ctx, '#f3ead0', mx - w, 26 + j, w * 2, 1); }
+  r(ctx, '#d8cfb4', mx - 3, 22, 3, 3); r(ctx, '#d8cfb4', mx + 2, 29, 2, 2);
+}
 const BG_GRASS = mk(256, 56, g => {
   r(g, '#a9b45f', 0, 0, 256, 16); for (let i = 0; i < 90; i++) r(g, i % 2 ? '#c2c070' : '#8c9c4c', Math.floor(rnd() * 256), Math.floor(rnd() * 16), 2, 1);
   r(g, '#d6d28a', 0, 16, 256, 2); r(g, '#7e8e45', 0, 18, 256, 38);
@@ -240,6 +276,28 @@ function buildLevel(ph) {
   const row = (x, y, n, dx = 16) => { for (let i = 0; i < n; i++) pick(x + i * dx, y); };
   const sign = (x, s) => L.signs.push({ x, s });
 
+  if (ph === 4) {
+    // La fuga in Mobike: di notte, si va avanti da soli, un solo tasto per saltare buche e coni
+    L.w = 3900; L.bike = true; L.night = true; L.ground = BG_ROAD; L.crowdN = 0; L.gateX = 3560; L.endX = 3620; L.bumps = []; L.lamps = [];
+    L.endSay = 'ECCOLA! A CASA, ADESSO.';
+    for (let x = 90; x < L.w; x += 190) L.lamps.push(x);
+    const xs = [430, 650, 900, 1080, 1340, 1530, 1720, 1980, 2160, 2420, 2600, 2800, 3020, 3220, 3400];
+    xs.forEach((x, i) => { L.bumps.push(i % 3 === 1 ? { x, w: 8, t: 'cono', hit: false } : { x, w: 16, t: 'buca', hit: false }); arc(x - 28, GROUND - 46, 5, 16, 26); });
+    row(150, GROUND - 16, 4, 24);
+    sign(200, 'PARCHEGGIO 4 KM');
+    sign(1180, 'PARCHEGGIO 3,9 KM');
+    sign(2260, "MA DOV'ERA?");
+    sign(3120, 'PARCHEGGIO 3,8 KM?');
+    for (let x = 3300; x < 3900; x += 70) L.bgCars.push({ x, col: BG_CAR_COLS[x % BG_CAR_COLS.length] });
+    L.bubbles = [
+      { x: 30, s: 'SCAPPIAMO PRIMA DEL TRAFFICO!' },
+      { x: 1230, s: 'ERAVAMO GIÀ PASSATI DI QUI?' },
+      { x: 2320, s: 'LA MOBIKE COSTA PIÙ DEL PANINO.' },
+      { x: 3200, s: 'LA VEDO! LA VEDO!' },
+    ];
+    L.hints = [{ x: -99, until: 560, s: TOUCH ? 'TOCCA OVUNQUE PER SALTARE LE BUCHE' : 'SPAZIO PER SALTARE LE BUCHE' }];
+    return L;
+  }
   if (ph === 1) {
     const cool = (x) => L.solids.push({ t: 'cool', x, y: GROUND - 14, w: 26, h: 14 });
     const shade = (x, w) => L.shades.push({ x, w });
@@ -320,26 +378,41 @@ function buildLevel(ph) {
 /* ========= Stato ========= */
 const TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 let state = 'title', stateT = 0, level, cam = 0, shake = 0, phase = 0, heat = 0, heatSaid = false, banner = null, m = null;
-let p, floats = [], parts = [], history = [], bubble = null, nextBubble = 0, stats;
+let p, floats = [], parts = [], history = [], bubble = null, nextBubble = 0, stats, cu = null, dv = null;
 const input = { left: false, right: false, jump: false, jumpPressed: false, keyL: false, keyR: false, keyJ: false, tL: false, tR: false, tJ: false };
 
-const TRACK_OF = ['parcheggio', 'caldo', 'mogwai'];
-const BANNERS = ['IL PARCHEGGIO', 'IL CALDO', 'I MOGWAI'];
+// Fasi: 0 parcheggio, 1 caldo, 2 Mogwai, 3 Cure, 4 Mobike, 5 autostrada; poi la scena finale (state 'fine')
+const TRACK_OF = ['parcheggio', 'caldo', 'mogwai', 'cure', 'bike', 'notte'];
+const BANNERS = ['IL PARCHEGGIO', 'IL CALDO', 'I MOGWAI', 'I CURE', 'LA FUGA IN MOBIKE', 'VERSO BOLOGNA'];
+const isWorld = () => phase === 0 || phase === 1 || phase === 4;
+const newStats = () => ({ euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0, naps: 0, salti: 0, buche: 0, sorpassi: 0 });
 function startPhase(ph) {
   phase = ph; if (ph === 0) stats = null;
-  input.tL = input.tR = input.tJ = input.jump = false; AUDIO.setTrack(TRACK_OF[ph]); AUDIO.playing = true;
+  input.tL = input.tR = input.tJ = input.jump = input.jumpPressed = false; AUDIO.setTrack(TRACK_OF[ph]); AUDIO.playing = true;
   banner = { s: BANNERS[ph], t: 2.2 };
+  if (!stats) stats = newStats();
   if (ph === 2) {
-    if (!stats) stats = { euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0 };
     m = { p: 0, open: 1, asleep: 0, cres: 0, cresDone: false, msg: null, msgT: 0, msgI: 0, wake: 0 }; stats.naps = 0;
     setState('mogwai'); return;
   }
+  if (ph === 3) {
+    cu = { mode: 'show', t: 0, mi: 0, msg: null, msgT: 0, yes: null, esc: 0, gy: 0, gvy: 0, ly: 0, lvy: 0, lj: 0, conf: [] };
+    setState('cure'); return;
+  }
+  if (ph === 5) {
+    dv = { z: 0, lane: 1, u: .5, v: 1, cars: [], signs: [], next: 3, n: 0, si: 0, mi: 0, scroll: 0, msg: null, msgT: 0, panda: false, pandaSaid: false };
+    setState('drive'); return;
+  }
   reset(); setState('play');
+}
+function startFine() {
+  if (!stats) stats = newStats();
+  banner = null; AUDIO.setTrack('casa'); AUDIO.playing = true; setState('fine');
 }
 function reset() {
   level = buildLevel(phase); heat = 0; heatSaid = false;
-  p = { x: 40, y: GROUND - 24, w: 12, h: 24, vx: 0, vy: 0, on: true, dir: 1, coyote: 0, buffer: 0, inv: 0, kb: 0, anim: 0 };
-  if (!stats) stats = { euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0 };
+  p = { x: 40, y: GROUND - 24, w: 12, h: 24, vx: 0, vy: 0, on: true, dir: 1, coyote: 0, buffer: 0, inv: 0, kb: 0, anim: 0, slow: 0 };
+  if (!stats) stats = newStats();
   stats.picksTot += level.picks.length;
   floats = []; parts = []; bubble = null; nextBubble = 0; cam = 0;
   history = Array.from({ length: FOLLOW_DELAY }, () => ({ x: 14, y: p.y, f: 'idle', dir: 1 }));
@@ -402,15 +475,130 @@ function stepMogwai(dt) {
   }
   if (m.p >= 1) { AUDIO.sfx('win'); setState('won'); }
 }
+
+/* I Cure: "Andiamo via?" e il SÌ che scappa, poi si salta tutti insieme */
+const BIKE_V = 150;
+function updateBike(dt, ending) {
+  if (p.slow > 0) p.slow -= dt;
+  const target = ending ? Math.max(0, Math.min(BIKE_V, (level.endX - 10 - p.x) * 3)) : BIKE_V * (p.slow > 0 ? .55 : 1);
+  p.vx += Math.sign(target - p.vx) * Math.min(Math.abs(target - p.vx), 320 * dt);
+  p.coyote = p.on ? COYOTE : p.coyote - dt;
+  p.buffer = input.jumpPressed ? BUFFER : p.buffer - dt;
+  if (p.buffer > 0 && p.coyote > 0 && !ending) { p.vy = JUMP_V; p.on = false; p.coyote = 0; p.buffer = 0; AUDIO.sfx('jump'); }   // salto sempre pieno: basta un tocco
+  p.vy = Math.min(p.vy + GRAV * dt, 420);
+  p.x += p.vx * dt; p.y += p.vy * dt; const wasOn = p.on; p.on = false;
+  if (p.y + p.h >= GROUND) { p.y = GROUND - p.h; p.vy = 0; p.on = true; }
+  if (p.on && !wasOn) burst(p.x + 6, GROUND, ['#c8c4cc'], 3, 30);
+  for (const b of level.bumps) if (!b.hit && p.on && p.x + p.w > b.x + 2 && p.x < b.x + b.w - 2) {
+    b.hit = true; p.slow = .6; p.vy = -90; p.on = false; stats.buche++;   // si sobbalza e si rallenta un attimo, niente di più
+    float(b.t === 'cono' ? 'OPS!' : 'BUCA!', p.x - 4, p.y - 10, C.yellow); AUDIO.sfx('blink');
+  }
+  p.anim += p.vx * dt * .09; input.jumpPressed = false;
+}
+
+const CURE_SHOW = [[.6, 'FINALMENTE I CURE!'], [4.2, 'LUI: SONO GIÀ LE 23:40...'], [7.4, 'LUI: DOMANI SI LAVORA, PERÒ...']];
+const CURE_BOYS = [[3.2, 'LUI: OK, AVEVI RAGIONE TU.'], [12, 'QUESTA LA CANTANO TUTTI!'], [22, 'LUI: CHE SERATA...']];
+const CURE_ESC = ['IL SÌ SCAPPA...', 'ANDARSENE PRIMA? SAREBBE DA SCEMI.', 'ORMAI ANCHE IL SÌ DICE NO.'];
+const BOYS_T = 30;
+const noRect = () => ({ x: Math.round(W / 2) + 14, y: 108, w: 60, h: 22 });
+const yesRect = () => ({ x: cu.yes.x, y: cu.yes.y, w: 60, h: 22 });
+const inRect = (R, x, y, pad) => x > R.x - pad && x < R.x + R.w + pad && y > R.y - pad && y < R.y + R.h + pad;
+function cureSay(s) { cu.msg = s; cu.msgT = 3.2; }
+function cureJump() {
+  if (cu.gy < 0) return;
+  cu.gvy = -280; cu.gy = -.01; cu.lj = .14; stats.salti++; AUDIO.sfx('jump');
+  const cols = [C.pink, C.yellow, C.cyan, '#fff'];
+  for (let i = 0; i < 14; i++) cu.conf.push({ x: W / 2 + (Math.random() - .5) * 120, y: 150 + Math.random() * 20, vx: (Math.random() - .5) * 90, vy: -90 - Math.random() * 90, t: .9, col: cols[i % 4] });
+}
+function cureNo() {
+  cu.mode = 'boys'; cu.t = 0; input.jumpPressed = false;
+  AUDIO.setTrack('boys'); AUDIO.sfx('win'); banner = { s: "BOYS DON'T CRY", t: 2.6 }; cureSay('LUI: GIUSTO. RESTIAMO.');
+}
+function cureFlee(tx, ty) {
+  const no = noRect(); let best = null;
+  for (let i = 0; i < 40; i++) {
+    const x = Math.round(10 + INSET.l + Math.random() * (W - 80 - INSET.l - INSET.r)), y = Math.round(26 + Math.random() * 150);
+    const R = { x, y, w: 60, h: 22 };
+    if (inRect(no, x + 30, y + 11, 50) || Math.hypot(x + 30 - tx, y + 11 - ty) < 90) continue;
+    best = R; break;
+  }
+  if (!best) best = { x: tx < W / 2 ? W - 74 - INSET.r : 12 + INSET.l, y: ty < 100 ? 170 : 30 };
+  cu.yes = { x: best.x, y: best.y }; cu.esc++; AUDIO.sfx('jump'); cureSay(CURE_ESC[Math.min(cu.esc, 3) - 1]);
+}
+function cureTap(x, y) {
+  if (state !== 'cure' || cu.mode !== 'ask' || cu.t < .4) return;
+  if (inRect(noRect(), x, y, 6) || (cu.esc >= 3 && inRect(yesRect(), x, y, 6))) cureNo();
+  else if (inRect(yesRect(), x, y, 10)) cureFlee(x, y);
+}
+function cureNear(x, y) {   // il SÌ scappa anche se il dito (o il mouse) gli passa vicino
+  if (state === 'cure' && cu.mode === 'ask' && cu.esc < 3 && cu.t > .4 && inRect(yesRect(), x, y, 8)) cureFlee(x, y);
+}
+function stepCure(dt) {
+  const pressed = input.jumpPressed; input.jumpPressed = false;
+  cu.t += dt; if (cu.msgT > 0) cu.msgT -= dt;
+  if (cu.gy < 0) { cu.gvy += 900 * dt; cu.gy += cu.gvy * dt; if (cu.gy >= 0) { cu.gy = 0; cu.gvy = 0; } }
+  if (cu.lj > 0 && (cu.lj -= dt) <= 0) { cu.lvy = -260; cu.ly = -.01; }
+  if (cu.ly < 0) { cu.lvy += 900 * dt; cu.ly += cu.lvy * dt; if (cu.ly >= 0) { cu.ly = 0; cu.lvy = 0; } }
+  cu.conf.forEach(q => { q.t -= dt; q.vy += 200 * dt; q.x += q.vx * dt; q.y += q.vy * dt; }); cu.conf = cu.conf.filter(q => q.t > 0);
+  if (cu.mode === 'show') {
+    while (cu.mi < CURE_SHOW.length && cu.t >= CURE_SHOW[cu.mi][0]) cureSay(CURE_SHOW[cu.mi++][1]);
+    if (pressed) cureJump();
+    if (cu.t > 10.5) { cu.mode = 'ask'; cu.t = 0; cu.msgT = 0; cu.yes = { x: Math.round(W / 2) - 74, y: 108 }; AUDIO.sfx('blink'); }
+  } else if (cu.mode === 'boys') {
+    if (cu.mi < 99) cu.mi = 99;
+    const bi = cu.mi - 99; if (bi < CURE_BOYS.length && cu.t >= CURE_BOYS[bi][0]) { cureSay(CURE_BOYS[bi][1]); cu.mi++; }
+    if (pressed) cureJump();
+    if (cu.t >= BOYS_T) { AUDIO.sfx('win'); setState('won'); }
+  }
+}
+
+/* In autostrada: guida lei, lui dormicchia; un tocco cambia corsia, mai incidenti */
+const DRIVE_T = 46, DV = 50, HOR = 92;
+const DRIVE_LINES = [[.03, 'GUIDO IO. TU RIPOSATI.'], [.15, 'LUI: Z Z Z...'], [.3, 'LUI: ...LA BIRRA A 9 EURO... Z Z'], [.56, 'LUI: NON DORMO. RIPOSO GLI OCCHI.'], [.76, 'LUI: ...SEI BRAVISSIMA... Z Z Z'], [.94, 'USCITA BOLOGNA. CI SIAMO.']];
+const DRIVE_SIGNS = [[.01, 'BOLOGNA 98 KM'], [.25, 'BOLOGNA 75 KM'], [.5, 'BOLOGNA 50 KM'], [.74, 'BOLOGNA 25 KM'], [.88, 'BOLOGNA 10 KM']];
+const TIR_COLS = ['#b9b2a4', '#9fa8b4', '#c4a77a', '#a4b49a'];
+const signImg = s => mk(textW(s) + 10, 15, g => { r(g, '#e8eef0', 0, 0, textW(s) + 10, 15); r(g, '#1d7a4c', 1, 1, textW(s) + 8, 13); text(s, 5, 4, '#fff', 1, g); });
+function driveSay(s, d = 3.4) { dv.msg = s; dv.msgT = d; }
+function stepDrive(dt) {
+  const pressed = input.jumpPressed; input.jumpPressed = false;
+  if (dv.msgT > 0) dv.msgT -= dt;
+  if (pressed) {
+    const to = 1 - dv.lane;
+    if (dv.cars.some(c => c.lane === to && c.d > -10 && c.d < 12)) driveSay("ASPETTA, C'È UN CAMION ACCANTO.", 1.6);
+    else { dv.lane = to; AUDIO.sfx('blink'); }
+  }
+  const lu = dv.lane ? .5 : -.5; dv.u += Math.sign(lu - dv.u) * Math.min(Math.abs(lu - dv.u), 2.4 * dt);
+  let tv = 1;   // dietro a un camion si rallenta da soli
+  for (const c of dv.cars) if (c.lane === dv.lane && c.d > 0 && c.d < 32) tv = Math.min(tv, c.v + Math.max(0, (c.d - 14) / 18) * (1 - c.v));
+  dv.v += Math.sign(tv - dv.v) * Math.min(Math.abs(tv - dv.v), .9 * dt);
+  for (const c of dv.cars) { c.d -= (dv.v - c.v) * DV * dt; if (c.lane === dv.lane && c.d > 0 && c.d < 13) c.d = 13; }
+  const before = dv.cars.length; dv.cars = dv.cars.filter(c => c.d > -14 && c.d < 200); stats.sorpassi += before - dv.cars.length;
+  dv.next -= dt;
+  if (dv.next <= 0 && dv.z < .88) {
+    if (!dv.cars.some(c => c.d > 90)) dv.cars.push({ lane: Math.random() < .8 ? 1 : 0, d: 150, v: .62, kind: 'tir', col: TIR_COLS[dv.n++ % TIR_COLS.length] });
+    dv.next = 3 + Math.random() * 2.5;
+  }
+  if (!dv.panda && dv.z > .42) { dv.panda = true; dv.cars.push({ lane: 0, d: 150, v: .5, kind: 'panda' }); }
+  const panda = dv.cars.find(c => c.kind === 'panda');
+  if (panda && !dv.pandaSaid && panda.d < 70) { dv.pandaSaid = true; driveSay('UNA PANDA IN CORSIA DI SORPASSO. CLASSICO.'); }
+  if (dv.si < DRIVE_SIGNS.length && dv.z >= DRIVE_SIGNS[dv.si][0]) { dv.signs.push({ d: 150, img: signImg(DRIVE_SIGNS[dv.si][1]) }); dv.si++; }
+  dv.signs.forEach(s => s.d -= dv.v * DV * dt); dv.signs = dv.signs.filter(s => s.d > -8);
+  if (dv.mi < DRIVE_LINES.length && dv.z >= DRIVE_LINES[dv.mi][0]) driveSay(DRIVE_LINES[dv.mi++][1]);
+  dv.z += dv.v * dt / DRIVE_T; dv.scroll += dv.v * DV * dt;
+  if (dv.z >= 1) startFine();
+}
+
 function step(dt) {
   stateT += dt;
   if (banner && (banner.t -= dt) <= 0) banner = null;
-  if (shake > 0 && phase === 2) shake -= dt;
+  if (shake > 0 && !isWorld()) shake -= dt;
   if (state === 'mogwai') { stepMogwai(dt); return; }
-  if (phase === 2) return;
+  if (state === 'cure') { stepCure(dt); return; }
+  if (state === 'drive') { stepDrive(dt); return; }
+  if (state === 'fine' || !isWorld()) return;
   if (state === 'play' || state === 'ending') {
     stats.t += dt;
-    updatePlayer(dt, state === 'ending');
+    (level.bike ? updateBike : updatePlayer)(dt, state === 'ending');
     if (p.inv > 0) p.inv -= dt;
 
     // Plettri
@@ -453,7 +641,7 @@ function step(dt) {
     history.push({ x: p.x - 2, y: p.y, f: spriteFrame(p), dir: p.dir });
     if (history.length > FOLLOW_DELAY + 1) history.shift();
 
-    if (state === 'play' && p.x >= level.endX - 40) { setState('ending'); say('CE L\'ABBIAMO FATTA!', 3); AUDIO.sfx('win'); }
+    if (state === 'play' && p.x >= level.endX - 40) { setState('ending'); say(level.endSay || 'CE L\'ABBIAMO FATTA!', 3); AUDIO.sfx('win'); }
     if (state === 'ending' && stateT > 2.4) { setState('won'); }
   }
   floats.forEach(f => { f.t -= dt; f.y -= 22 * dt; }); floats = floats.filter(f => f.t > 0);
@@ -467,6 +655,7 @@ function spriteFrame(o) { if (!o.on) return 'jump'; if (Math.abs(o.vx) < 8) retu
 /* ========= Disegno ========= */
 const dayT = () => (level.heat ? Math.min(1, p.x / level.endX) : 0);   // nel caldo il pomeriggio scorre verso il tramonto
 function drawSky() {
+  if (level.night) { NIGHT.forEach((c, i) => r(ctx, c, 0, i * 26, W, 27)); return; }
   const t = dayT(), hBand = 26; SKY.forEach((c, i) => r(ctx, t ? mix(c, SUNSET[i], t) : c, 0, i * hBand, W, hBand + 1));
   const sx = Math.round(W * (.74 - t * .14)), sy = Math.round(34 + t * 92), halo = t ? 'rgba(255,190,120,.35)' : 'rgba(255,240,170,.35)', sun = t ? mix('#fff4b0', '#ff6a3c', t) : '#fff4b0';
   for (let i = -24; i <= 24; i++) { const w = Math.round(Math.sqrt(Math.max(0, 576 - i * i))); r(ctx, halo, sx - w, sy + i, w * 2, 1); }
@@ -512,8 +701,25 @@ function drawStage() {
   for (let i = 0; i < 9; i++) r(ctx, i % 3 === 0 ? C.yellow : (i % 3 === 1 ? C.cyan : C.pink), x + 10 + i * 25, GROUND - 124, 6, 4);
   [x + 14, x + w - 40].forEach(sp => { r(ctx, '#0d0b13', sp, GROUND - 78, 26, 52); r(ctx, '#3a3444', sp + 8, GROUND - 70, 10, 10); r(ctx, '#3a3444', sp + 6, GROUND - 52, 14, 14); });
 }
+function drawLamp(lx) {
+  const x = sx(lx); if (x < -60 || x > W + 60) return;
+  for (let y = GROUND - 92; y < GROUND + 4; y += 2) { const w = Math.round(4 + (y - GROUND + 92) * .34); r(ctx, 'rgba(255,196,110,.07)', x + 10 - w, y, w * 2, 2); }
+  r(ctx, '#2a2833', x, GROUND - 100, 3, 100); r(ctx, '#2a2833', x, GROUND - 100, 12, 2);
+  r(ctx, '#ffd28a', x + 7, GROUND - 98, 7, 3); r(ctx, 'rgba(255,210,140,.35)', x + 5, GROUND - 99, 11, 6);
+}
+function drawBump(b) {
+  const x = sx(b.x); if (x < -20 || x > W) return;
+  if (b.t === 'cono') { for (let i = 0; i < 10; i++) { const w = Math.max(1, Math.round(i * .4)); r(ctx, i === 4 || i === 5 ? '#fff' : '#f07a1e', x + 4 - w, GROUND - 10 + i, w * 2, 1); } r(ctx, '#c85a10', x - 1, GROUND - 1, 10, 2); }
+  else { r(ctx, '#121018', x + 2, GROUND - 1, b.w - 4, 4); r(ctx, '#121018', x, GROUND, b.w, 2); r(ctx, '#5c5866', x + 1, GROUND - 2, b.w - 2, 1); }
+}
 function drawGate() {
   if (level.stage) return drawStage();
+  if (level.bike) {   // il parcheggio e la vostra macchina
+    const x = sx(level.gateX); if (x > W + 40 || x < -200) return;
+    r(ctx, '#5a5866', x + 9, GROUND - 70, 3, 70); r(ctx, C.ink, x, GROUND - 92, 21, 23); r(ctx, '#1e55c8', x + 1, GROUND - 91, 19, 21); text('P', x + 6, GROUND - 87, '#fff', 2);
+    drawCar(ctx, sx(level.endX + 16), GROUND - 26, 54, 26, OUR_CAR);
+    return;
+  }
   const x = sx(level.gateX); if (x > W + 100 || x < -160) return;
   r(ctx, '#2a2030', x, GROUND - 90, 8, 90); r(ctx, '#2a2030', x + 110, GROUND - 90, 8, 90);
   r(ctx, C.ink, x - 6, GROUND - 106, 130, 24); r(ctx, C.pink, x - 4, GROUND - 104, 126, 20);
@@ -533,6 +739,11 @@ function drawCrowd() {
 function drawPlayer() {
   const blink = p.inv > 0 && Math.floor(p.inv * 12) % 2 === 0;
   const h = history[0];
+  if (level.bike) {   // in sella: personaggio un po' più in alto, bici sotto
+    const ride = (set, o, dx) => { const f = o.f === 'jump' || o.f === 'idle' ? 'idle' : o.f; ctx.drawImage(BIKE, sx(o.x + dx - 5), Math.round(o.y) + 10); ctx.drawImage(set[f], sx(o.x + dx), Math.round(o.y) - 9); };
+    ride(LUI, h, -16); if (!blink) ride(GIBI, { x: p.x, y: p.y, f: spriteFrame(p) }, -2);
+    return;
+  }
   drawChar(LUI[h.f], h.x - 16, h.y, h.dir);
   if (!blink) drawChar(GIBI[spriteFrame(p)], p.x - 2, p.y - 2, p.dir);
 }
@@ -570,7 +781,7 @@ function drawHUD() {
   const hint = level.hints.find(h => p.x >= h.x && p.x < h.until); if (hint) { const hy = level.heat ? 36 : 24, hw = textW(hint.s) + 12; r(ctx, 'rgba(23,16,28,.72)', (W - hw) / 2 | 0, hy, hw, 15); textC(hint.s, hy + 4, C.white); }
 }
 function drawControls() {
-  if (!TOUCH) return;
+  if (!TOUCH || level.bike) return;   // in Mobike si tocca dove si vuole
   const z = zones();
   const btn = (x0, w, on, draw) => { const x = Math.round(x0), y = H - 44; r(ctx, on ? 'rgba(255,46,126,.75)' : 'rgba(23,16,28,.42)', x, y, w, 38); r(ctx, 'rgba(255,255,255,.65)', x, y, w, 1); r(ctx, 'rgba(255,255,255,.65)', x, y + 37, w, 1); r(ctx, 'rgba(255,255,255,.65)', x, y, 1, 38); r(ctx, 'rgba(255,255,255,.65)', x + w - 1, y, 1, 38); draw(x + w / 2, y + 19); };
   const bw = Math.round(z.bw / z.s) - 4, lx = z.inset / z.s + 3;
@@ -587,12 +798,14 @@ function drawWorld() {
   ctx.globalAlpha = .55;
   for (const c of level.bgCars) { const x = sx(c.x); if (x < W && x > -60) drawCar(ctx, x, 142, 46, 24, c.col, true); }
   ctx.globalAlpha = 1;
+  if (level.night) { r(ctx, 'rgba(10,8,36,.6)', 0, 0, W, H); drawNightSky(60); level.lamps.forEach(drawLamp); }
   drawCrowd();
   drawGate();
   level.shades.forEach(drawShade);
   level.signs.forEach(drawSign);
   for (const m of level.puddles) { const x = sx(m.x); if (x < W && x + m.w > 0) { r(ctx, '#4b90b0', x + 3, GROUND, m.w - 6, 5); r(ctx, '#7fc0d6', x + 6, GROUND, m.w - 12, 2); r(ctx, '#d6f0f6', x + 9 + (Math.floor(performance.now() / 300) % 6), GROUND + 1, 8, 1); } }
   level.solids.forEach(drawSolid);
+  if (level.bumps) level.bumps.forEach(drawBump);
   const bobT = performance.now() * .005;
   for (const k of level.picks) if (!k.got) { const x = sx(k.x); if (x > -12 && x < W) ctx.drawImage(PICK, x, Math.round(k.y + Math.sin(bobT + k.x * .05) * 1.5)); }
   for (const e of level.enemies) if (e.alive) {
@@ -630,19 +843,172 @@ function drawTitle() {
   ctx.save(); ctx.translate(W / 2 - 34, 124); ctx.scale(2, 2); ctx.drawImage(GIBI[f], 0, 0); ctx.restore();
   ctx.save(); ctx.translate(W / 2 + 34, 124); ctx.scale(-2, 2); ctx.drawImage(LUI[f], -16 + 0, 0); ctx.restore();
   if (Math.floor(performance.now() / 500) % 2) textC(TOUCH ? 'TOCCA PER INIZIARE' : 'PREMI SPAZIO PER INIZIARE', 186, C.yellow);
-  textC('PROTOTIPO: FINO AI MOGWAI', 200, '#a896b4');
 }
 function drawWon() {
   ctx.fillStyle = `rgba(23,16,28,${Math.min(.92, stateT * 1.6)})`; ctx.fillRect(0, 0, W, H);
   if (stateT < .4) return;
   ransom('OK!', 18, 4);
-  textC(['SEI ARRIVATA ALL\'IPPODROMO', 'HAI RESISTITO FINO A SERA', stats.naps ? 'HAI DORMITO SOLO UN PO\'' : 'NON HAI CHIUSO OCCHIO'][phase], 72, C.white, 1);
+  textC(['SEI ARRIVATA ALL\'IPPODROMO', 'HAI RESISTITO FINO A SERA', stats.naps ? 'HAI DORMITO SOLO UN PO\'' : 'NON HAI CHIUSO OCCHIO', 'HAI VISTO TUTTO IL CONCERTO', 'SIETE ARRIVATI ALLA MACCHINA'][phase], 72, C.white, 1);
   const lines = phase === 2 ? [['PISOLINI', stats.naps || 0], ['PLETTRI TOTALI', stats.picks], ['EURO RIMASTI', stats.euro + '€']]
+    : phase === 3 ? [['SALTI SOTTO IL PALCO', stats.salti], ['PLETTRI TOTALI', stats.picks], ['EURO RIMASTI', stats.euro + '€']]
+    : phase === 4 ? [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['BUCHE PRESE', stats.buche], ['EURO RIMASTI', stats.euro + '€']]
     : [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['MESTIERATE SVENTATE', stats.sventate], ['EURO RIMASTI', stats.euro + '€']];
   lines.forEach(([a, b], i) => { const y = 92 + i * 14, x = Math.round(W / 2 - 100); text(a, x, y, '#c7b8d2'); const v = String(b); text(v, x + 200 - textW(v), y, C.yellow); });
-  textC(['ORA VIENE IL DIFFICILE: IL CALDO.', 'ORA I MOGWAI. NON ADDORMENTARTI.', 'IN ARRIVO: I CURE E LA FUGA IN MOBIKE.'][phase], 146, C.cyan);
-  const verb = phase === 2 ? 'RIGIOCARE' : 'CONTINUARE';
-  if (stateT > 1.2 && Math.floor(performance.now() / 500) % 2) textC((TOUCH ? 'TOCCA PER ' : 'PREMI SPAZIO PER ') + verb, 172, C.white);
+  textC(['ORA VIENE IL DIFFICILE: IL CALDO.', 'ORA I MOGWAI. NON ADDORMENTARTI.', 'E ORA, FINALMENTE: I CURE.', 'ORA SI SCAPPA IN MOBIKE.', 'ULTIMA TAPPA: SI TORNA A CASA.'][phase], 146, C.cyan);
+  if (stateT > 1.2 && Math.floor(performance.now() / 500) % 2) textC((TOUCH ? 'TOCCA PER ' : 'PREMI SPAZIO PER ') + 'CONTINUARE', 172, C.white);
+}
+function msgBox(s, y = 196) { const hw = Math.min(W - 12, textW(s) + 12), mx = (W - hw) / 2 | 0; r(ctx, C.ink, mx, y, hw, 15); r(ctx, C.paper, mx + 1, y + 1, hw - 2, 13); textC(s, y + 4, C.ink); }
+function hintBox(s, y = 24) { const hw = textW(s) + 12; r(ctx, 'rgba(23,16,28,.8)', (W - hw) / 2 | 0, y, hw, 15); textC(s, y + 4, C.white); }
+
+const CURE_SKY = ['#0d0a1c', '#130e26', '#1a1130', '#22133a', '#2b1642', '#36194a', '#401c50'];
+function drawCure() {
+  const now = performance.now(), boys = cu.mode === 'boys', beat = boys && Math.floor(now / 192) % 2, sc = Math.round(W / 2);
+  CURE_SKY.forEach((c, i) => r(ctx, beat ? mix(c, i % 2 ? '#ff2e7e' : '#38d6d0', .22) : c, 0, i * 26, W, 27));
+  drawNightSky(30);
+  // il palco
+  r(ctx, '#0b0914', sc - 130, 44, 260, 110); r(ctx, '#0b0914', sc - 142, 32, 284, 14);
+  for (let i = 0; i < 12; i++) r(ctx, boys && (i + Math.floor(now / 192)) % 3 === 0 ? '#fff' : [C.yellow, C.cyan, C.pink][i % 3], sc - 136 + i * 24, 40, 5, 4);
+  [sc - 128, sc + 96].forEach(x => { r(ctx, '#1d1830', x, 60, 32, 24); r(ctx, boys ? (beat ? C.pink : C.cyan) : '#3a2f5a', x + 2, 62, 28, 20); });
+  for (let i = 0; i < 6; i++) {
+    const bx = sc - 110 + i * 44, sway = Math.sin(now * (boys ? .006 : .0012) + i * 1.9) * 40, a = boys ? .26 : .13;
+    for (let y = 0; y < 104; y += 2) { const w = 1 + y * .14; r(ctx, `rgba(${['255,46,126', '56,214,208', '255,210,63'][i % 3]},${a})`, Math.round(bx + sway * y / 104 - w), 44 + y, Math.round(w * 2), 2); }
+  }
+  r(ctx, '#1a1626', sc - 120, 134, 240, 4);
+  // la band, in controluce
+  [sc - 72, sc - 36, sc, sc + 36, sc + 72].forEach((bx, i) => {
+    const by = 120 + (boys && (i + Math.floor(now / 192)) % 2 ? -2 : 0), k = '#05040a';
+    r(ctx, k, bx - 3, by - 22, 7, 7); r(ctx, k, bx - 5, by - 15, 11, 17); r(ctx, k, bx - 4, by + 2, 3, 12); r(ctx, k, bx + 1, by + 2, 3, 12);
+    if (i === 2) { r(ctx, k, bx - 7, by - 27, 15, 7); r(ctx, k, bx - 6, by - 30, 3, 3); r(ctx, k, bx - 1, by - 31, 3, 4); r(ctx, k, bx + 4, by - 30, 3, 3); r(ctx, '#3a3444', bx + 8, by - 16, 1, 30); }
+    else if (i === 4) { r(ctx, k, bx - 12, by - 4, 24, 4); r(ctx, k, bx - 10, by, 2, 14); r(ctx, k, bx + 8, by, 2, 14); }
+    else r(ctx, k, bx - 8, by - 5, 15, 3);
+  });
+  // il pubblico
+  r(ctx, '#0e0a16', 0, 150, W, H - 150);
+  for (let i = 0; i < 26; i++) {
+    const cx = (i * 29 + (i % 3) * 7) % (W + 20) - 10, jump = boys ? (Math.sin(now * .016 + i) > 0 ? 3 : 0) : (Math.sin(now * .002 + i) > .5 ? 1 : 0), cy = 148 + (i * 13) % 10 - jump;
+    r(ctx, '#0a0712', cx, cy, 13, 11); r(ctx, '#0a0712', cx - 5, cy + 10, 23, 60);
+    if (boys && i % 2) r(ctx, '#0a0712', cx + 14, cy - 12, 3, 18);
+  }
+  // Gibi e lui, uno di fronte all'altra
+  const gf = cu.gy < 0 ? 'jump' : 'idle', lf = cu.ly < 0 ? 'jump' : 'idle';
+  ctx.save(); ctx.translate(sc - 50, 142 + Math.round(cu.gy)); ctx.scale(2, 2); ctx.drawImage(GIBI[gf], 0, 0); ctx.restore();
+  ctx.save(); ctx.translate(sc + 50, 142 + Math.round(cu.ly)); ctx.scale(-2, 2); ctx.drawImage(LUI[lf], 0, 0); ctx.restore();
+  cu.conf.forEach(q => r(ctx, q.col, q.x | 0, q.y | 0, 2, 2));
+  // in alto
+  textS('I CURE', 8 + INSET.l, 9, C.white);
+  if (boys) { const bw = Math.min(150, W * .42), bx = Math.round((W - bw) / 2); r(ctx, C.ink, bx - 1, 9, bw + 2, 7); r(ctx, 'rgba(255,255,255,.35)', bx, 10, bw, 5); r(ctx, C.pink, bx, 10, Math.round(bw * Math.min(1, cu.t / BOYS_T)), 5); }
+  else textS('23:4' + (cu.mode === 'ask' ? '2' : '1'), W - 40 - INSET.r, 9, C.yellow);
+  if (cu.mode === 'show' && cu.t > 1.5 && stats.salti === 0) hintBox(TOUCH ? 'TOCCA PER SALTARE' : 'SPAZIO PER SALTARE');
+  if (boys && cu.t > 2.6 && cu.t < 7 && stats.salti < 3) hintBox(TOUCH ? 'TOCCA PER SALTARE!' : 'SPAZIO PER SALTARE!');
+  if (cu.mode === 'ask') {
+    r(ctx, 'rgba(10,6,20,.55)', 0, 0, W, H);
+    const px = sc - 100, py = 40; r(ctx, C.ink, px, py, 200, 96); r(ctx, C.paper, px + 1, py + 1, 198, 94);
+    textC('LUI TI CHIEDE:', py + 9, '#8a7a98'); textC('ANDIAMO VIA?', py + 24, C.ink, 2); textC('COSÌ EVITIAMO IL TRAFFICO.', py + 47, '#5a4a68');
+    const btn = (R, s, col) => { r(ctx, C.ink, R.x, R.y, R.w, R.h); r(ctx, col, R.x + 1, R.y + 1, R.w - 2, R.h - 2); text(s, R.x + (R.w - textW(s, 2)) / 2, R.y + 5, s === 'NO' ? C.ink : '#fff', 2); };
+    const pulse = cu.t > 6 && Math.floor(now / 300) % 2;
+    btn(noRect(), 'NO', pulse ? '#fff' : C.cyan);
+    btn(yesRect(), cu.esc >= 3 ? 'NO' : 'SÌ', cu.esc >= 3 ? C.cyan : C.pink);
+  }
+  if (cu.msg && cu.msgT > 0) msgBox(cu.msg, cu.mode === 'ask' ? 186 : 196);
+}
+
+function drawDrive() {
+  const now = performance.now(), sc = W / 2;
+  NIGHT.forEach((c, i) => r(ctx, c, 0, i * 14, W, 15));
+  drawNightSky(70);
+  for (let x = 0; x < W; x++) { const q = x + dv.z * 500, y = Math.round(HOR - 12 - Math.sin(q * .021) * 6 - Math.sin(q * .053) * 3); r(ctx, '#1a1530', x, y, 1, HOR - y); }   // l'Appennino
+  r(ctx, '#0b0912', 0, HOR, W, H - HOR);
+  const hw = t => 3 + t * W * .9, X = (u, t) => Math.round(sc + (u - dv.u) * hw(t));
+  for (let y = HOR; y < H; y++) {
+    const t = (y - HOR + 1) / (H - HOR), depth = 6 / t, lw = Math.max(1, Math.round(hw(t) * .025));
+    const xl = X(-1.1, t), xr = X(1.1, t); r(ctx, '#26232e', xl, y, xr - xl, 1);
+    r(ctx, '#9e99a8', X(-1, t), y, lw, 1); r(ctx, '#9e99a8', X(1, t) - lw, y, lw, 1);
+    if (Math.floor((depth + dv.scroll) / 5) % 2 === 0) r(ctx, '#e8e4ee', X(0, t) - (lw >> 1), y, lw, 1);
+    r(ctx, '#4a4556', X(1.25, t), y, lw + 1, 1); r(ctx, '#4a4556', X(-1.25, t) - lw, y, lw + 1, 1);
+  }
+  const at = d => { const t = 6 / (d + 6); return { t, y: Math.round(HOR + t * (H - HOR)), pm: hw(t) / 3.6 }; };
+  // lampioni sullo spartitraffico
+  const LD = 34, off = dv.scroll % LD;
+  for (let k = 6; k >= 0; k--) {
+    const d = k * LD - off; if (d < -4) continue; const { t, y, pm } = at(d), x = X(-1.3, t), hgt = Math.round(9 * pm), ax = X(-.85, t);
+    r(ctx, '#3a3546', x, y - hgt, Math.max(1, Math.round(pm * .25)), hgt); r(ctx, '#3a3546', x, y - hgt, ax - x, Math.max(1, Math.round(pm * .15)));
+    const g = Math.max(2, Math.round(pm * .7)); r(ctx, 'rgba(255,180,90,.25)', ax - g * 2, y - hgt - g, g * 4, g * 3); r(ctx, '#ffc070', ax - g, y - hgt, g * 2, Math.max(1, g >> 1));
+  }
+  // cartelli verdi
+  for (const s of dv.signs) {
+    const { t, y, pm } = at(s.d), w = Math.round(3.4 * pm), h = Math.round(w * s.img.height / s.img.width), x = X(1.75, t) - (w >> 1);
+    r(ctx, '#3a3546', x + (w >> 1), y - Math.round(5 * pm), Math.max(1, Math.round(pm * .2)), Math.round(5 * pm)); ctx.drawImage(s.img, x, y - Math.round(5 * pm) - h, w, h);
+  }
+  // camion e Panda, dal più lontano
+  for (const c of [...dv.cars].sort((a, b) => b.d - a.d)) {
+    if (c.d < -2) continue;
+    const { t, y, pm } = at(c.d), tir = c.kind === 'tir', w = Math.round((tir ? 2.5 : 1.6) * pm), h = Math.round((tir ? 3.4 : 1.5) * pm), x = X(c.lane ? .5 : -.5, t) - (w >> 1);
+    if (tir) { r(ctx, '#1a1820', x, y - h, w, h); r(ctx, c.col, x + 1, y - h + 1, w - 2, h - Math.max(2, h >> 3)); r(ctx, 'rgba(0,0,0,.25)', x + (w >> 1), y - h + 1, 1, h - 2); }
+    else { r(ctx, '#e8e2d0', x, y - h, w, h); r(ctx, '#2a3040', x + Math.round(w * .15), y - h + 1, Math.round(w * .7), Math.round(h * .4)); }
+    const tl = Math.max(1, Math.round(pm * .3)); r(ctx, '#ff3040', x + 1, y - tl * 3, tl, tl); r(ctx, '#ff3040', x + w - 1 - tl, y - tl * 3, tl, tl);
+    r(ctx, 'rgba(255,40,60,.22)', x - tl, y - tl * 4, tl * 3, tl * 3); r(ctx, 'rgba(255,40,60,.22)', x + w - tl * 2, y - tl * 4, tl * 3, tl * 3);
+    if (w > 10) r(ctx, C.yellow, x + (w >> 1) - (tl), y - tl * 2, tl * 2, Math.max(1, tl >> 1));
+  }
+  // dentro la macchina: tetto, montanti, specchietto, cruscotto
+  r(ctx, '#07060b', 0, 0, W, 8);
+  for (let y = 0; y < 176; y += 2) { const w = Math.round(30 - y * .12); r(ctx, '#07060b', 0, y, w, 2); r(ctx, '#07060b', W - w, y, w, 2); }
+  r(ctx, '#07060b', sc - 2, 8, 4, 12); r(ctx, '#07060b', sc - 26, 18, 52, 13); r(ctx, '#252130', sc - 24, 20, 48, 9);
+  const gx = Math.round(W * .3), lx = Math.round(W * .7);
+  for (let a = 0; a < 64; a++) { const t = a / 64 * 6.283; r(ctx, '#1c1824', Math.round(gx + Math.cos(t) * 34) - 2, Math.round(176 + Math.sin(t) * 22) - 2, 4, 4); }   // volante
+  r(ctx, '#120f18', 0, 174, W, 42); r(ctx, '#2a2433', 0, 174, W, 2);
+  r(ctx, 'rgba(255,150,60,.55)', gx - 22, 178, 44, 3);
+  r(ctx, '#05040a', sc - 30, 182, 60, 13); text('VOLUME 2', sc - 23, 185, C.cyan);   // musica bassa, lui dorme
+  // le teste, viste dal sedile dietro
+  const S = 4;
+  ctx.drawImage(GIBI_BACK, gx - 8 * S, H - 18 * S, 16 * S, 18 * S);
+  const c = (now / 1000) % 7, lean = c < 5.6 ? (c / 5.6) ** 2 : Math.max(0, 1 - (c - 5.6) / .2);   // la testa ciondola e si rialza di scatto
+  ctx.drawImage(LUI_BACK_BODY, lx - 8 * S, H - 4 * S, 16 * S, 4 * S);
+  ctx.drawImage(LUI_BACK_HEAD, lx - 8 * S + Math.round(lean * 12), H - 18 * S + Math.round(lean * 9), 16 * S, 14 * S);
+  r(ctx, 'rgba(10,8,30,.25)', 0, 150, W, H - 150);
+  if (lean > .15) { const zz = Math.floor(now / 600) % 3; for (let i = 0; i <= zz; i++) textS('Z', lx + 30 + i * 9, H - 18 * S - 6 - i * 10, '#c7b8d2', i > 1 ? 2 : 1); }
+  // in alto
+  textS('BOLOGNA ' + Math.max(0, Math.round(100 * (1 - dv.z))) + ' KM', 8 + INSET.l + 30, 10, C.white);
+  const bw = Math.min(90, W * .26), bx = W - bw - 40 - INSET.r; r(ctx, C.ink, bx - 1, 10, bw + 2, 7); r(ctx, 'rgba(255,255,255,.35)', bx, 11, bw, 5); r(ctx, C.yellow, bx, 11, Math.round(bw * dv.z), 5);
+  if (dv.z < .07) hintBox(TOUCH ? 'TOCCA PER CAMBIARE CORSIA' : 'SPAZIO PER CAMBIARE CORSIA', 44);
+  else if (dv.v < .85 && Math.floor(now / 400) % 2) hintBox(TOUCH ? 'TOCCA PER SORPASSARE' : 'SPAZIO PER SORPASSARE', 44);
+  if (dv.msg && dv.msgT > 0) msgBox(dv.msg, 26);
+}
+
+const FINE_LINES = ['NON MI HAI SALVATO DA UN MOSTRO.', 'MI HAI RIPORTATO A CASA, COME SEMPRE.', 'TI SEGUIREI IN CAPO AL MONDO.', 'SOPRATTUTTO SE GUIDI TU.'];
+const FINE_AT = [2.4, 5.6, 8.8, 12], FINE_READY = 16;
+function drawFine() {
+  const t = stateT, now = performance.now();
+  NIGHT.forEach((c, i) => r(ctx, c, 0, i * 32, W, 33));
+  drawNightSky(36);
+  // un palazzo di Bologna, con il portico
+  r(ctx, '#24141e', 0, 36, W, 4); r(ctx, '#3b2230', 0, 40, W, 136);
+  const home = Math.floor((W / 2 - 14) / 40);
+  for (let i = 0; i * 40 + 14 < W; i++) [50, 76].forEach((y, j) => {
+    const x = i * 40 + 14, lit = (i * 7 + j * 3) % 5 === 0 || (i === home && j === 1 && t > FINE_AT[3] + 1.2);
+    r(ctx, '#24141e', x - 1, y - 1, 14, 18); r(ctx, lit ? '#ffcf7a' : '#1a0f16', x, y, 12, 16); r(ctx, '#2f4a3a', x - 4, y, 3, 16); r(ctx, '#2f4a3a', x + 13, y, 3, 16);
+  });
+  r(ctx, '#4a2a36', 0, 100, W, 76); r(ctx, '#24141e', 0, 100, W, 3);
+  for (let i = 0; i * 48 < W + 48; i++) {
+    const cx = i * 48 + 20;
+    for (let y = 110; y < 176; y++) { const hw = y < 129 ? Math.round(Math.sqrt(Math.max(0, 361 - (129 - y) ** 2))) : 19; r(ctx, '#1a0f16', cx - hw, y, hw * 2, 1); }
+    r(ctx, 'rgba(255,170,90,.14)', cx - 16, 122, 32, 54); r(ctx, '#ffcf7a', cx - 2, 116, 4, 3);
+  }
+  r(ctx, '#2a2530', 0, 176, W, 40); r(ctx, '#3a3440', 0, 176, W, 2);
+  // la macchina parcheggiata, lei e lui
+  ctx.save(); ctx.scale(2, 2);
+  drawCar(ctx, Math.round(W / 4) + 6, 62, 54, 26, OUR_CAR);
+  ctx.drawImage(GIBI.idle, Math.round(W / 4) - 44, 62);
+  ctx.save(); ctx.translate(Math.round(W / 4) - 8, 62); ctx.scale(-1, 1); ctx.drawImage(LUI.idle, 0, 0); ctx.restore();
+  ctx.restore();
+  if (t > FINE_AT[3] + 1) { const ht = (t - FINE_AT[3] - 1) % 3, hx = Math.round(W / 2 - 52), hy = Math.round(116 - ht * 14); if (ht < 2.4) ctx.drawImage(HEART, hx, hy, 14, 12); }
+  // il messaggio, una lettera alla volta
+  r(ctx, 'rgba(14,10,24,.72)', 0, 8, W, 64);
+  FINE_LINES.forEach((s, i) => { const n = Math.floor((t - FINE_AT[i]) * 22); if (n > 0) textC(s.slice(0, n).padEnd(s.length, ' '), 16 + i * 13, i === 3 ? C.yellow : C.white); });
+  if (t > FINE_READY) {
+    ransom('FINE', 182, 2);
+    if (Math.floor(now / 500) % 2) textC((TOUCH ? 'TOCCA PER ' : 'PREMI SPAZIO PER ') + 'RIGIOCARE', 206, '#c7b8d2');
+  }
+  if (t < 1.5) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 1.5})`; ctx.fillRect(0, 0, W, H); }
 }
 const MOG_SKY = ['#120e2c', '#1a1338', '#241744', '#31194e', '#421c56', '#5a2058', '#6d2a58'];
 function drawMogwai() {
@@ -694,9 +1060,10 @@ function drawMogwai() {
 function draw() {
   ctx.imageSmoothingEnabled = false;
   if (state === 'title') { drawTitle(); return; }
+  if (state === 'fine') { drawFine(); return; }
   ctx.save();
   if (shake > 0) ctx.translate(Math.round(Math.sin(performance.now() * .08) * 2), 0);
-  if (phase === 2) drawMogwai(); else drawWorld();
+  if (phase === 2) drawMogwai(); else if (phase === 3) drawCure(); else if (phase === 5) drawDrive(); else drawWorld();
   ctx.restore();
   if (state === 'play' || state === 'ending') { drawHUD(); drawControls(); }
   if (banner && state !== 'won') { const s = banner.s, hw = textW(s, 2) + 20; r(ctx, C.ink, (W - hw) / 2 | 0, 54, hw, 26); r(ctx, C.pink, ((W - hw) / 2 | 0) + 1, 55, hw - 2, 24); textC(s, 60, '#fff', 2); }
@@ -721,6 +1088,21 @@ const AUDIO = (() => {
       bass: [38, 38, 41, 41, 36, 36, 43, 43], lead: SLOW_LEAD },
     crescendo: { bpm: 116, drums: 3, bassT: 'sawtooth', bassV: .17, bassD: 1, leadT: 'sawtooth', leadV: .07, leadD: 1.2,
       bass: [38, 38, 41, 41, 36, 36, 43, 43], lead: SLOW_LEAD },
+    cure: { bpm: 120, drums: 1, bassT: 'triangle', bassV: .18, bassD: 1.8, leadT: 'triangle', leadV: .08, leadD: 1.7,
+      bass: [40, 40, 43, 43, 38, 38, 45, 45],
+      lead: [64, 67, 71, 74, 71, 67, 64, 67, 62, 66, 69, 74, 69, 66, 62, 66, 67, 71, 74, 79, 74, 71, 67, 71, 69, 72, 76, 81, 76, 72, 69, 0] },
+    boys: { bpm: 156, drums: 2, bassT: 'triangle', bassV: .2, bassD: .9, leadT: 'square', leadV: .05, leadD: .8,
+      bass: [43, 43, 47, 47, 40, 40, 45, 45],
+      lead: [67, 0, 71, 74, 0, 74, 72, 71, 71, 0, 74, 79, 0, 79, 78, 76, 76, 0, 79, 83, 0, 81, 79, 76, 76, 0, 74, 72, 71, 69, 67, 0] },
+    bike: { bpm: 150, drums: 2, bassT: 'triangle', bassV: .2, bassD: .9, leadT: 'square', leadV: .04, leadD: .7,
+      bass: [45, 45, 48, 48, 43, 43, 40, 40],
+      lead: [69, 72, 74, 76, 74, 72, 69, 0, 67, 69, 72, 74, 72, 69, 67, 0, 65, 69, 72, 77, 76, 74, 72, 69, 64, 67, 71, 76, 74, 71, 68, 0] },
+    notte: { bpm: 72, drums: 0, bassT: 'sine', bassV: .12, bassD: 3, leadT: 'sine', leadV: .045, leadD: 3,
+      bass: [41, 41, 45, 45, 38, 38, 43, 43],
+      lead: [72, 0, 0, 76, 0, 0, 79, 0, 77, 0, 0, 76, 0, 0, 72, 0, 69, 0, 0, 72, 0, 0, 76, 0, 74, 0, 0, 72, 0, 0, 71, 0] },
+    casa: { bpm: 64, drums: 0, bassT: 'sine', bassV: .16, bassD: 3.5, leadT: 'triangle', leadV: .07, leadD: 2.4,
+      bass: [36, 36, 41, 41, 43, 43, 36, 36],
+      lead: [64, 0, 67, 0, 72, 0, 71, 72, 69, 0, 72, 0, 77, 0, 76, 74, 71, 0, 74, 0, 79, 0, 77, 76, 72, 0, 0, 0, 76, 0, 72, 0] },
   };
   let track = TRACKS.parcheggio;
   api.setTrack = n => { track = TRACKS[n]; stepN = 0; nextT = 0; };
@@ -794,8 +1176,10 @@ function syncInput() {
 function readTouches(e) {
   const b = canvas.getBoundingClientRect(), z = zones();
   input.tL = input.tR = input.tJ = false;
-  if (state === 'mogwai') { if (e.touches.length) input.tJ = true; }
-  else if (state === 'play' || state === 'ending') for (const t of e.touches) {
+  const playing = state === 'play' || state === 'ending';
+  if (state === 'mogwai' || state === 'cure' || state === 'drive') { if (e.touches.length) input.tJ = true; }
+  else if (playing && level.bike) { for (const t of e.touches) if (!(t.clientX - b.left > b.width - 56 && t.clientY - b.top < 50)) input.tJ = true; }
+  else if (playing) for (const t of e.touches) {
     const x = t.clientX - b.left, y = t.clientY - b.top;
     if (x > b.width - 56 && y < 50) continue;
     if (x >= b.width * .5) input.tJ = true;
@@ -805,31 +1189,46 @@ function readTouches(e) {
   syncInput();
 }
 let armed = false;
-const START_PHASE = { '#caldo': 1, '#mogwai': 2 }[location.hash] || 0;   // scorciatoie per provare una fase
+const START_PHASE = { '#caldo': 1, '#mogwai': 2, '#cure': 3, '#mobike': 4, '#auto': 5, '#fine': 6 }[location.hash] || 0;   // scorciatoie per provare una fase
+const canAdvance = () => (state === 'won' && stateT > 1.2) || (state === 'fine' && stateT > FINE_READY);
+const TAP_STATES = ['play', 'ending', 'mogwai', 'cure', 'drive'];
 function action() {
-  if (state === 'title') startPhase(START_PHASE);
-  else if (state === 'won' && stateT > 1.2 && armed) { armed = false; startPhase(phase === 2 ? 0 : phase + 1); }
+  if (state === 'title') { stats = null; if (START_PHASE === 6) startFine(); else startPhase(START_PHASE); }
+  else if (canAdvance() && armed) { armed = false; startPhase(state === 'fine' ? 0 : phase + 1); }
 }
+const toCanvas = t => { const b = canvas.getBoundingClientRect(); return [(t.clientX - b.left) / b.width * W, (t.clientY - b.top) / b.height * H]; };
 window.addEventListener('touchstart', e => {
-  if (state === 'play' || state === 'ending' || state === 'mogwai') e.preventDefault();   // su titolo e riepilogo il tocco resta un vero click: iOS sblocca l'audio
+  if (TAP_STATES.includes(state)) e.preventDefault();   // su titolo, riepilogo e finale il tocco resta un vero click: iOS sblocca l'audio
   AUDIO.unlock();
-  if (state === 'won' && stateT > 1.2) armed = true;
+  if (canAdvance()) armed = true;
   const b = canvas.getBoundingClientRect();
   if (state === 'play') for (const t of e.changedTouches) if (t.clientX - b.left > b.width - 56 && t.clientY - b.top < 50) AUDIO.setMuted(!AUDIO.muted);
   readTouches(e);
+  if (state === 'cure') for (const t of e.changedTouches) cureTap(...toCanvas(t));
 }, { passive: false });
-window.addEventListener('touchmove', e => { e.preventDefault(); readTouches(e); }, { passive: false });
+window.addEventListener('touchmove', e => { e.preventDefault(); readTouches(e); if (state === 'cure') for (const t of e.touches) cureNear(...toCanvas(t)); }, { passive: false });
 window.addEventListener('click', () => AUDIO.unlock());
 window.addEventListener('touchend', e => { AUDIO.unlock(); if (e.touches.length === 0) action(); readTouches(e); }, { passive: false });
 window.addEventListener('touchcancel', readTouches);
-window.addEventListener('mousedown', () => { AUDIO.unlock(); if (state === 'mogwai') input.jumpPressed = true; if (state === 'won' && stateT > 1.2) armed = true; if (!TOUCH || state !== 'play') action(); });
+window.addEventListener('mousedown', e => {
+  AUDIO.unlock();
+  if (state === 'mogwai' || state === 'cure' || state === 'drive') input.jumpPressed = true;
+  if (state === 'cure') cureTap(...toCanvas(e));
+  if (canAdvance()) armed = true;
+  if (!TOUCH || state !== 'play') action();
+});
+window.addEventListener('mousemove', e => { if (state === 'cure' && !TOUCH) cureNear(...toCanvas(e)); });
 window.addEventListener('keydown', e => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', ' '].includes(e.key)) e.preventDefault();
   AUDIO.unlock();
   if (e.repeat) return;
   if (e.key === 'ArrowLeft') input.keyL = true;
   if (e.key === 'ArrowRight') input.keyR = true;
-  if (e.key === ' ' || e.key === 'ArrowUp') { input.keyJ = true; if (state === 'won' && stateT > 1.2) armed = true; action(); }
+  if (e.key === ' ' || e.key === 'ArrowUp') {
+    input.keyJ = true; if (canAdvance()) armed = true;
+    if (state === 'cure' && cu.mode === 'ask' && cu.t > .4) cureNo();   // da tastiera il SÌ non si raggiunge proprio
+    action();
+  }
   if (e.key === 'm') AUDIO.setMuted(!AUDIO.muted);
   syncInput();
 });
@@ -873,6 +1272,6 @@ function frame(now) {
   draw();
 }
 reset();
-window.__gibi = { get state() { return state; }, get p() { return p; }, get stats() { return stats; }, get level() { return level; }, get W() { return W; }, get phase() { return phase; }, get heat() { return heat; }, get m() { return m; } };
+window.__gibi = { get state() { return state; }, get p() { return p; }, get stats() { return stats; }, get level() { return level; }, get W() { return W; }, get phase() { return phase; }, get heat() { return heat; }, get m() { return m; }, get cu() { return cu; }, get dv() { return dv; }, get stateT() { return stateT; } };
 requestAnimationFrame(frame);
 </script>
