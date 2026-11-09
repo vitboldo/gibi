@@ -164,7 +164,7 @@ const LUI_BACK_HEAD = mk(16, 14, g => rows(g, [
   '.....SSSSSS.....', '.....SSSSSS.....'], { x: '#1e1a1c', X: '#3a3236', g: '#a8a4a0', s: SKIN_D, S: SKIN }));
 const LUI_BACK_BODY = mk(16, 4, g => rows(g, ['..DDDDDDDDDDDD..', '.DDDDDDDDDDDDDD.', 'DDDDDDDDDDDDDDDD', 'DDDDDDDDDDDDDDDD'], { D: '#23262e' }));
 const HEART = mk(7, 6, g => rows(g, ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'], { '#': C.pink }));
-const OUR_CAR = '#8a8f99';   // colore della vostra macchina: da confermare
+const OUR_CAR = '#2c3a5e';   // la vostra macchina: blu navy
 
 /* Mestierate: i prezzi assurdi prendono vita */
 function eyes(g, x, y, gap) { r(g, '#fff', x, y, 3, 3); r(g, '#fff', x + gap, y, 3, 3); r(g, C.ink, x + 1, y + 1, 2, 2); r(g, C.ink, x + gap + 1, y + 1, 2, 2); r(g, C.ink, x, y - 1, 3, 1); r(g, C.ink, x + gap, y - 1, 3, 1); }
@@ -277,25 +277,31 @@ function buildLevel(ph) {
   const sign = (x, s) => L.signs.push({ x, s });
 
   if (ph === 4) {
-    // La fuga in Mobike: di notte, si va avanti da soli, un solo tasto per saltare buche e coni
-    L.w = 3900; L.bike = true; L.night = true; L.ground = BG_ROAD; L.crowdN = 0; L.gateX = 3560; L.endX = 3620; L.bumps = []; L.lamps = [];
-    L.endSay = 'ECCOLA! A CASA, ADESSO.';
-    for (let x = 90; x < L.w; x += 190) L.lamps.push(x);
-    const xs = [430, 650, 900, 1080, 1340, 1530, 1720, 1980, 2160, 2420, 2600, 2800, 3020, 3220, 3400];
-    xs.forEach((x, i) => { L.bumps.push(i % 3 === 1 ? { x, w: 8, t: 'cono', hit: false } : { x, w: 16, t: 'buca', hit: false }); arc(x - 28, GROUND - 46, 5, 16, 26); });
+    // La fuga in Mobike: si pedala da soli, un tocco per saltare. In mezzo, la strada buia verso Mercatale.
+    L.w = 4300; L.bike = true; L.night = true; L.ground = BG_ROAD; L.crowdN = 0; L.gateX = 3960; L.endX = 4020; L.bumps = []; L.lamps = []; L.boars = []; L.shadows = [];
+    L.dark = [1400, 3300]; L.endSay = 'ECCOLA! A CASA, ADESSO.';
+    for (let x = 90; x < L.w; x += 190) if (x < L.dark[0] - 60 || x > L.dark[1] + 20) L.lamps.push(x);
+    const hole = x => L.bumps.push({ x, w: 16, t: 'buca', hit: false }), cone = x => L.bumps.push({ x, w: 8, t: 'cono', hit: false });
+    const boar = x => L.boars.push({ x, y: GROUND - 12, w: 20, h: 12, vx: 0, hit: false }), shadow = x => L.shadows.push({ x, st: 0, t: 0, hit: false });
+    hole(420); cone(620); hole(820); hole(1000); hole(1046); cone(1200);
+    hole(1500); boar(1720); hole(1790); shadow(2120); hole(2290); hole(2336); cone(2490); boar(2640); shadow(2900); hole(2960); shadow(3240);
+    cone(3420); hole(3650); hole(3696); cone(3820);
+    L.bumps.forEach(b => arc(b.x - 28, GROUND - 46, 5, 16, 26));
     row(150, GROUND - 16, 4, 24);
     sign(200, 'PARCHEGGIO 4 KM');
-    sign(1180, 'PARCHEGGIO 3,9 KM');
-    sign(2260, "MA DOV'ERA?");
-    sign(3120, 'PARCHEGGIO 3,8 KM?');
-    for (let x = 3300; x < 3900; x += 70) L.bgCars.push({ x, col: BG_CAR_COLS[x % BG_CAR_COLS.length] });
+    sign(1130, 'PARCHEGGIO 3,9 KM');
+    sign(1330, 'MERCATALE');
+    sign(3360, 'PARCHEGGIO 3,8 KM?');
+    for (let x = 3700; x < 4300; x += 70) L.bgCars.push({ x, col: BG_CAR_COLS[x % BG_CAR_COLS.length] });
     L.bubbles = [
       { x: 30, s: 'SCAPPIAMO PRIMA DEL TRAFFICO!' },
-      { x: 1230, s: 'ERAVAMO GIÀ PASSATI DI QUI?' },
-      { x: 2320, s: 'LA MOBIKE COSTA PIÙ DEL PANINO.' },
-      { x: 3200, s: 'LA VEDO! LA VEDO!' },
+      { x: 700, s: 'LA MOBIKE COSTA PIÙ DEL PANINO.' },
+      { x: 1420, s: 'MA DOVE SIAMO? NON SI VEDE NIENTE.' },
+      { x: 2560, s: 'HAI SENTITO ANCHE TU?' },
+      { x: 3330, s: 'LUCI! CIVILTÀ!' },
+      { x: 3760, s: 'LA VEDO! LA VEDO!' },
     ];
-    L.hints = [{ x: -99, until: 560, s: TOUCH ? 'TOCCA OVUNQUE PER SALTARE LE BUCHE' : 'SPAZIO PER SALTARE LE BUCHE' }];
+    L.hints = [{ x: -99, until: 560, s: TOUCH ? 'TOCCA OVUNQUE PER SALTARE LE BUCHE' : 'SPAZIO PER SALTARE LE BUCHE' }, { x: 1380, until: 1640, s: 'NEL BUIO GUARDA BENE DAVANTI' }];
     return L;
   }
   if (ph === 1) {
@@ -320,7 +326,7 @@ function buildLevel(ph) {
     L.bubbles = [
       { x: 60, s: 'MA QUANTO MANCA A STASERA?' },
       { x: 1000, s: 'OMBRA! OMBRA!' },
-      { x: 2060, s: 'SONO DIVENTATO BRODO.' },
+      { x: 2060, s: 'MI STO SQUAGLIANDO.' },
       { x: 2990, s: 'ECCO IL PALCO!' },
     ];
     L.hints = [{ x: -99, until: 300, s: 'CERCA ACQUA E OMBRA' }];
@@ -385,14 +391,14 @@ const input = { left: false, right: false, jump: false, jumpPressed: false, keyL
 const TRACK_OF = ['parcheggio', 'caldo', 'mogwai', 'cure', 'bike', 'notte'];
 const BANNERS = ['IL PARCHEGGIO', 'IL CALDO', 'I MOGWAI', 'I CURE', 'LA FUGA IN MOBIKE', 'VERSO BOLOGNA'];
 const isWorld = () => phase === 0 || phase === 1 || phase === 4;
-const newStats = () => ({ euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0, naps: 0, salti: 0, buche: 0, sorpassi: 0 });
+const newStats = () => ({ euro: 60, sventate: 0, picks: 0, picksTot: 0, hits: 0, t: 0, naps: 0, salti: 0, buche: 0, spaventi: 0, sorpassi: 0, sveglie: 0, note: 0, noteTot: 0 });
 function startPhase(ph) {
   phase = ph; if (ph === 0) stats = null;
   input.tL = input.tR = input.tJ = input.jump = input.jumpPressed = false; AUDIO.setTrack(TRACK_OF[ph]); AUDIO.playing = true;
   banner = { s: BANNERS[ph], t: 2.2 };
   if (!stats) stats = newStats();
   if (ph === 2) {
-    m = { p: 0, open: 1, asleep: 0, cres: 0, cresDone: false, msg: null, msgT: 0, msgI: 0, wake: 0 }; stats.naps = 0;
+    m = { t: 0, p: 0, open: 1, asleep: 0, cres: 0, cresDone: false, msg: null, msgT: 0, msgI: 0, notes: mogChart(), hits: 0, combo: 0, best: 0, fb: null, press: [0, 0] }; stats.naps = 0;
     setState('mogwai'); return;
   }
   if (ph === 3) {
@@ -400,7 +406,7 @@ function startPhase(ph) {
     setState('cure'); return;
   }
   if (ph === 5) {
-    dv = { z: 0, lane: 1, u: .5, v: 1, cars: [], signs: [], next: 3, n: 0, si: 0, mi: 0, scroll: 0, msg: null, msgT: 0, panda: false, pandaSaid: false };
+    dv = { z: 0, lane: 1, u: .5, v: 1, cars: [], signs: [], next: 2.5, n: 0, si: 0, mi: 0, scroll: 0, msg: null, msgT: 0, panda: false, pandaSaid: false, wake: 0, danger: false };
     setState('drive'); return;
   }
   reset(); setState('play');
@@ -453,31 +459,56 @@ function updatePlayer(dt, autoWalk) {
 }
 
 const MOG_LINES = [[.02, 'CHE ATMOSFERA...'], [.2, 'È ANCORA IL PRIMO PEZZO?'], [.4, 'BELLISSIMO. PERÒ LENTO.'], [.72, 'SONO TORNATI LENTI...'], [.9, 'RESISTI! POI CI SONO I CURE!']];
+/* Mogwai: le note scendono in due corsie, si tocca a sinistra o a destra quando arrivano al cerchio.
+   Le note perse fanno chiudere gli occhi; a occhi chiusi, pisolino. Non si perde mai. */
+const MOG_END = 44, MOG_FALL = 1.9, MOG_HIT = 168, MOG_TOP = 30, MOG_CRES = [.55, .76];
+function mogChart() {
+  const B = 60 / 58, notes = []; let t = 3.4, i = 0, s = 11;
+  const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  while (t < MOG_END - 2.2) {
+    const p = t / MOG_END, cres = p > MOG_CRES[0] && p < MOG_CRES[1];
+    const lane = cres ? (Math.floor(i / 2) % 2) : (rand() < .5 ? 0 : 1);
+    notes.push({ t, lane, hit: 0 });
+    if (cres && i % 5 === 4) notes.push({ t, lane: 1 - lane, hit: 0 });   // nel crescendo ogni tanto due note insieme
+    t += cres ? B / 2 : (p < .2 ? B * 2 : (p > .8 && i % 3 === 2 ? B / 2 : B)); i++;
+  }
+  return notes;
+}
+function mogFb(s, lane, col) { m.fb = { s, lane, col, t: .7 }; }
+function mogTap(lane) {
+  if (state !== 'mogwai' || m.asleep > 0) return;
+  m.press[lane] = .12;
+  let best = null; for (const n of m.notes) if (!n.hit && n.lane === lane && Math.abs(n.t - m.t) < .22 && (!best || Math.abs(n.t - m.t) < Math.abs(best.t - m.t))) best = n;
+  if (best) {
+    best.hit = 1; m.hits++; m.combo++; m.best = Math.max(m.best, m.combo); m.open = Math.min(1, m.open + .16);
+    mogFb(Math.abs(best.t - m.t) < .08 ? 'PERFETTO!' : 'BENE!', lane, Math.abs(best.t - m.t) < .08 ? C.yellow : C.cyan); AUDIO.sfx('nota', lane);
+  } else { m.combo = 0; m.open = Math.max(0, m.open - .04); mogFb('FUORI TEMPO', lane, '#c7b8d2'); }
+}
 function stepMogwai(dt) {
-  const pressed = input.jumpPressed; input.jumpPressed = false;
+  input.jumpPressed = false;
   if (m.msgT > 0) m.msgT -= dt;
-  if (m.wake > 0) m.wake -= dt;
+  if (m.fb && (m.fb.t -= dt) <= 0) m.fb = null;
+  m.press = m.press.map(v => Math.max(0, v - dt));
+  m.t += dt; m.p = Math.min(1, m.t / MOG_END);
   if (m.asleep > 0) {
     m.asleep -= dt;
-    if (m.asleep <= 0) { m.open = 1; m.p = Math.max(0, m.p - .06); shake = .3; m.wake = 1; m.msg = 'GIBI! SVEGLIA!'; m.msgT = 2; AUDIO.sfx('stomp'); }
-    return;
-  }
-  m.p += dt / 34;
-  if (m.msgI < MOG_LINES.length && m.p >= MOG_LINES[m.msgI][0]) { m.msg = MOG_LINES[m.msgI][1]; m.msgT = 3.2; m.msgI++; }
-  if (!m.cresDone && m.p >= .58) { m.cresDone = true; m.cres = 3.4; AUDIO.setTrack('crescendo'); m.msg = 'IL CRESCENDO!'; m.msgT = 3.2; }
-  if (m.cres > 0) {
-    m.cres -= dt; m.open = 1; shake = .1;
-    if (m.cres <= 0) AUDIO.setTrack('mogwai');
+    for (const n of m.notes) if (!n.hit && n.t < m.t + MOG_FALL * .6) n.hit = -2;   // durante il pisolino le note passano senza contare
+    if (m.asleep <= 0) { m.open = .75; shake = .3; m.msg = 'GIBI! SVEGLIA!'; m.msgT = 2; AUDIO.sfx('stomp'); }
   } else {
-    m.open -= (.075 + .13 * m.p) * dt;
-    if (pressed) { m.open = Math.min(1, m.open + .24); AUDIO.sfx('blink'); }
+    for (const n of m.notes) if (!n.hit && m.t - n.t > .22) { n.hit = -1; m.combo = 0; m.open = Math.max(0, m.open - .13); mogFb('PERSA...', n.lane, '#8a7a98'); }
+    m.open -= .025 * dt;
     if (m.open <= 0) { m.open = 0; m.asleep = 1.9; stats.naps++; }
   }
-  if (m.p >= 1) { AUDIO.sfx('win'); setState('won'); }
+  if (m.msgI < MOG_LINES.length && m.p >= MOG_LINES[m.msgI][0]) { m.msg = MOG_LINES[m.msgI][1]; m.msgT = 3.2; m.msgI++; }
+  const inCres = m.p > MOG_CRES[0] && m.p < MOG_CRES[1];
+  if (inCres && !m.cresDone) { m.cresDone = true; m.cres = 1; AUDIO.setTrack('crescendo'); m.msg = 'IL CRESCENDO!'; m.msgT = 3.2; }
+  if (!inCres && m.cres > 0) { m.cres = 0; AUDIO.setTrack('mogwai'); }
+  if (m.cres > 0) shake = .05;
+  if (m.p >= 1) { stats.note = m.hits; stats.noteTot = m.notes.length; AUDIO.sfx('win'); setState('won'); }
 }
 
 /* I Cure: "Andiamo via?" e il SÌ che scappa, poi si salta tutti insieme */
-const BIKE_V = 150;
+const BIKE_V = 165;
 function updateBike(dt, ending) {
   if (p.slow > 0) p.slow -= dt;
   const target = ending ? Math.max(0, Math.min(BIKE_V, (level.endX - 10 - p.x) * 3)) : BIKE_V * (p.slow > 0 ? .55 : 1);
@@ -496,8 +527,29 @@ function updateBike(dt, ending) {
   p.anim += p.vx * dt * .09; input.jumpPressed = false;
 }
 
-const CURE_SHOW = [[.6, 'FINALMENTE I CURE!'], [4.2, 'LUI: SONO GIÀ LE 23:40...'], [7.4, 'LUI: DOMANI SI LAVORA, PERÒ...']];
-const CURE_BOYS = [[3.2, 'LUI: OK, AVEVI RAGIONE TU.'], [12, 'QUESTA LA CANTANO TUTTI!'], [22, 'LUI: CHE SERATA...']];
+const inBeam = s => s.st === 2 && p.x + p.w > s.x - 170 && p.x < s.x;
+function stepBikeExtra(dt) {
+  for (const b of level.boars) {
+    if (!b.vx && b.x - p.x < W * .75) b.vx = -70;   // il cinghiale attraversa venendoti incontro
+    b.x += b.vx * dt;
+    if (!b.hit && state === 'play' && hit(p, { x: b.x + 2, y: b.y + 2, w: b.w - 4, h: b.h - 2 })) {
+      b.hit = true; p.slow = 1; p.vy = -120; p.on = false; shake = .2; stats.buche++;
+      float('CINGHIALE!', p.x - 10, p.y - 12, C.red); AUDIO.sfx('hurt'); say('UN CINGHIALE?!', 2);
+    }
+  }
+  for (const s of level.shadows) {
+    const d = s.x - (p.x + p.w); s.t += dt;
+    if (s.st === 0 && d < 240) { s.st = 1; s.t = 0; AUDIO.sfx('blink'); }
+    else if (s.st === 1 && d < 110) { s.st = 2; s.t = 0; AUDIO.sfx('torcia'); }
+    else if (s.st === 2 && s.t > .3) { s.st = 3; s.t = 0; if (!s.hit) float('PFIU!', p.x - 4, p.y - 12, C.cyan); }
+    if (inBeam(s) && !s.hit && p.y + p.h > GROUND - 15 && state === 'play') {
+      s.hit = true; p.slow = 1.3; shake = .35; stats.spaventi++;
+      float('AAAH!', p.x - 6, p.y - 14, C.yellow); AUDIO.sfx('hurt'); say(["CHI C'È?!", 'PEDALA! PEDALA!', 'NON GUARDARE! VAI!'][Math.min(2, stats.spaventi - 1)], 2.2);
+    }
+  }
+}
+const CURE_SHOW = [[.6, 'FINALMENTE I CURE!'], [4.2, 'VI: SONO GIÀ LE 23:40...'], [7.4, 'VI: DOMANI SI LAVORA, PERÒ...']];
+const CURE_BOYS = [[3.2, 'VI: OK, AVEVI RAGIONE TU.'], [12, 'QUESTA LA CANTANO TUTTI!'], [22, 'VI: CHE SERATA...']];
 const CURE_ESC = ['IL SÌ SCAPPA...', 'ANDARSENE PRIMA? SAREBBE DA SCEMI.', 'ORMAI ANCHE IL SÌ DICE NO.'];
 const BOYS_T = 30;
 const noRect = () => ({ x: Math.round(W / 2) + 14, y: 108, w: 60, h: 22 });
@@ -512,7 +564,7 @@ function cureJump() {
 }
 function cureNo() {
   cu.mode = 'boys'; cu.t = 0; input.jumpPressed = false;
-  AUDIO.setTrack('boys'); AUDIO.sfx('win'); banner = { s: "BOYS DON'T CRY", t: 2.6 }; cureSay('LUI: GIUSTO. RESTIAMO.');
+  AUDIO.setTrack('boys'); AUDIO.sfx('win'); banner = { s: "BOYS DON'T CRY", t: 2.6 }; cureSay('VI: GIUSTO. RESTIAMO.');
 }
 function cureFlee(tx, ty) {
   const no = noRect(); let best = null;
@@ -553,37 +605,49 @@ function stepCure(dt) {
 }
 
 /* In autostrada: guida lei, lui dormicchia; un tocco cambia corsia, mai incidenti */
-const DRIVE_T = 46, DV = 50, HOR = 92;
-const DRIVE_LINES = [[.03, 'GUIDO IO. TU RIPOSATI.'], [.15, 'LUI: Z Z Z...'], [.3, 'LUI: ...LA BIRRA A 9 EURO... Z Z'], [.56, 'LUI: NON DORMO. RIPOSO GLI OCCHI.'], [.76, 'LUI: ...SEI BRAVISSIMA... Z Z Z'], [.94, 'USCITA BOLOGNA. CI SIAMO.']];
+const DRIVE_T = 52, DV = 50, HOR = 92, TUNNEL = [.36, .5];
+const DRIVE_LINES = [[.03, 'GUIDO IO. TU RIPOSATI.'], [.15, 'VI: Z Z Z...'], [.28, 'VI: ...LA BIRRA A 9 EURO... Z Z'], [.365, 'UNA GALLERIA. CHE BUIO...'], [.56, 'VI: NON DORMO. RIPOSO GLI OCCHI.'], [.76, 'VI: ...SEI BRAVISSIMA... Z Z Z'], [.94, 'USCITA BOLOGNA. CI SIAMO.']];
 const DRIVE_SIGNS = [[.01, 'BOLOGNA 98 KM'], [.25, 'BOLOGNA 75 KM'], [.5, 'BOLOGNA 50 KM'], [.74, 'BOLOGNA 25 KM'], [.88, 'BOLOGNA 10 KM']];
 const TIR_COLS = ['#b9b2a4', '#9fa8b4', '#c4a77a', '#a4b49a'];
 const signImg = s => mk(textW(s) + 10, 15, g => { r(g, '#e8eef0', 0, 0, textW(s) + 10, 15); r(g, '#1d7a4c', 1, 1, textW(s) + 8, 13); text(s, 5, 4, '#fff', 1, g); });
 function driveSay(s, d = 3.4) { dv.msg = s; dv.msgT = d; }
+const WAKE_LINES = ['VI: EH?! CHE SUCCEDE?', 'VI: SONO SVEGLIO! SONO SVEGLIO!', 'VI: ...DOVE SIAMO?', 'VI: PIANO CON I FRENI...'];
 function stepDrive(dt) {
   const pressed = input.jumpPressed; input.jumpPressed = false;
   if (dv.msgT > 0) dv.msgT -= dt;
+  if (dv.wake > 0) dv.wake -= dt;
   if (pressed) {
     const to = 1 - dv.lane;
     if (dv.cars.some(c => c.lane === to && c.d > -10 && c.d < 12)) driveSay("ASPETTA, C'È UN CAMION ACCANTO.", 1.6);
     else { dv.lane = to; AUDIO.sfx('blink'); }
   }
   const lu = dv.lane ? .5 : -.5; dv.u += Math.sign(lu - dv.u) * Math.min(Math.abs(lu - dv.u), 2.4 * dt);
-  let tv = 1;   // dietro a un camion si rallenta da soli
-  for (const c of dv.cars) if (c.lane === dv.lane && c.d > 0 && c.d < 32) tv = Math.min(tv, c.v + Math.max(0, (c.d - 14) / 18) * (1 - c.v));
-  dv.v += Math.sign(tv - dv.v) * Math.min(Math.abs(tv - dv.v), .9 * dt);
+  // niente rallentamento dolce: se arrivi addosso a un camion si frena di colpo e Vi si sveglia
+  let tv = 1, brake = null; dv.danger = false;
+  for (const c of dv.cars) if (c.lane === dv.lane && c.d > 0) {
+    if (c.d < 46 && c.v < dv.v - .05) dv.danger = true;
+    if (c.d < 22) { tv = Math.min(tv, c.v); brake = c; }
+  }
+  if (brake && !brake.braked && dv.v > brake.v + .12) {
+    brake.braked = true; stats.sveglie++; dv.wake = 2.6; shake = .3; AUDIO.sfx('hurt');
+    driveSay(WAKE_LINES[(stats.sveglie - 1) % WAKE_LINES.length], 2.4);
+  }
+  dv.v += Math.sign(tv - dv.v) * Math.min(Math.abs(tv - dv.v), (tv < dv.v ? 2.4 : .45) * dt);   // freno brusco, ripresa lenta
   for (const c of dv.cars) { c.d -= (dv.v - c.v) * DV * dt; if (c.lane === dv.lane && c.d > 0 && c.d < 13) c.d = 13; }
   const before = dv.cars.length; dv.cars = dv.cars.filter(c => c.d > -14 && c.d < 200); stats.sorpassi += before - dv.cars.length;
   dv.next -= dt;
-  if (dv.next <= 0 && dv.z < .88) {
-    if (!dv.cars.some(c => c.d > 90)) dv.cars.push({ lane: Math.random() < .8 ? 1 : 0, d: 150, v: .62, kind: 'tir', col: TIR_COLS[dv.n++ % TIR_COLS.length] });
-    dv.next = 3 + Math.random() * 2.5;
+  if (dv.next <= 0 && dv.z < .9) {
+    const lane = Math.random() < .6 ? 1 : 0;
+    // mai due camion affiancati: deve restare sempre un varco
+    if (!dv.cars.some(c => c.d > 112)) dv.cars.push({ lane, d: 150, v: .55 + Math.random() * .1, kind: 'tir', col: TIR_COLS[dv.n++ % TIR_COLS.length] });
+    dv.next = 1.5 + Math.random() * 1.2;
   }
-  if (!dv.panda && dv.z > .42) { dv.panda = true; dv.cars.push({ lane: 0, d: 150, v: .5, kind: 'panda' }); }
+  if (!dv.panda && dv.z > .42) { dv.panda = true; dv.cars.push({ lane: 0, d: 150, v: .45, kind: 'panda' }); }
   const panda = dv.cars.find(c => c.kind === 'panda');
   if (panda && !dv.pandaSaid && panda.d < 70) { dv.pandaSaid = true; driveSay('UNA PANDA IN CORSIA DI SORPASSO. CLASSICO.'); }
   if (dv.si < DRIVE_SIGNS.length && dv.z >= DRIVE_SIGNS[dv.si][0]) { dv.signs.push({ d: 150, img: signImg(DRIVE_SIGNS[dv.si][1]) }); dv.si++; }
   dv.signs.forEach(s => s.d -= dv.v * DV * dt); dv.signs = dv.signs.filter(s => s.d > -8);
-  if (dv.mi < DRIVE_LINES.length && dv.z >= DRIVE_LINES[dv.mi][0]) driveSay(DRIVE_LINES[dv.mi++][1]);
+  if (dv.mi < DRIVE_LINES.length && dv.z >= DRIVE_LINES[dv.mi][0]) { if (dv.wake <= 0) driveSay(DRIVE_LINES[dv.mi][1]); dv.mi++; }
   dv.z += dv.v * dt / DRIVE_T; dv.scroll += dv.v * DV * dt;
   if (dv.z >= 1) startFine();
 }
@@ -599,6 +663,7 @@ function step(dt) {
   if (state === 'play' || state === 'ending') {
     stats.t += dt;
     (level.bike ? updateBike : updatePlayer)(dt, state === 'ending');
+    if (level.bike) stepBikeExtra(dt);
     if (p.inv > 0) p.inv -= dt;
 
     // Plettri
@@ -612,7 +677,7 @@ function step(dt) {
       for (const w of level.waters) if (!w.got && hit({ x: p.x - 3, y: p.y - 3, w: p.w + 6, h: p.h + 6 }, { x: w.x, y: w.y, w: 8, h: 13 })) {
         w.got = true; heat = Math.max(0, heat - 38); float('AAAH!', w.x - 8, w.y - 8, C.cyan); AUDIO.sfx('pick'); burst(w.x + 4, w.y + 6, ['#58c4ec', '#fff'], 8, 70);
       }
-      if (heat >= 100 && !heatSaid && state === 'play') { heatSaid = true; say('TROPPO CALDO... SERVE ACQUA!', 2.6); }
+      if (heat >= 100 && !heatSaid && state === 'play') { heatSaid = true; say('MI STO SCIOGLIENDO... ACQUA!', 2.6); }
       if (heat < 60) heatSaid = false;
     }
     // Mestierate
@@ -706,6 +771,40 @@ function drawLamp(lx) {
   for (let y = GROUND - 92; y < GROUND + 4; y += 2) { const w = Math.round(4 + (y - GROUND + 92) * .34); r(ctx, 'rgba(255,196,110,.07)', x + 10 - w, y, w * 2, 2); }
   r(ctx, '#2a2833', x, GROUND - 100, 3, 100); r(ctx, '#2a2833', x, GROUND - 100, 12, 2);
   r(ctx, '#ffd28a', x + 7, GROUND - 98, 7, 3); r(ctx, 'rgba(255,210,140,.35)', x + 5, GROUND - 99, 11, 6);
+}
+function drawBikeNight() {
+  for (const b of level.boars) {
+    const x = sx(b.x); if (x < -30 || x > W + 10) continue; const leg = Math.floor(performance.now() / 90) % 2;
+    r(ctx, '#3a2a22', x + 2, b.y, 15, 8); r(ctx, '#2a1d18', x, b.y + 2, 5, 5); r(ctx, '#e8dcc0', x, b.y + 5, 2, 1); r(ctx, '#2a1d18', x + 4, b.y - 1, 10, 2);
+    r(ctx, '#2a1d18', x + 4 + leg, b.y + 8, 2, 4); r(ctx, '#2a1d18', x + 13 - leg, b.y + 8, 2, 4);
+  }
+  // la strada buia: si vede solo quello che illumina il fanale
+  const [d0, d1] = level.dark, gx = p.x + 14, lx = history[0].x - 2;
+  for (let x = 0; x < W; x += 3) {
+    const wx = cam + x, fade = Math.min(1, Math.max(0, Math.min(wx - d0, d1 - wx) / 90)); if (fade <= 0) continue;
+    const lit = (wx2, reach) => { const d = wx - wx2; return d < 0 ? Math.max(0, 1 + d / 50) * .6 : Math.max(0, 1 - d / reach) ** .7; };
+    const a = .9 * fade * (1 - Math.max(lit(gx, 120), lit(lx, 60) * .7));
+    if (a > .01) r(ctx, `rgba(4,3,12,${a.toFixed(3)})`, x, 0, 3, H);
+  }
+  if (cam + W > d0 && cam < d1) drawNightSky(56);   // le stelle restano
+  if (p.x > d0 - 60 && p.x < d1 + 60) for (let i = 0; i < 40; i++) { const h = Math.round(i * .32); r(ctx, 'rgba(255,236,170,.05)', sx(gx) + i * 3, Math.round(p.y) + 12 - (h >> 1), 3, h + 14); }
+  for (const b of level.boars) { const x = sx(b.x); if (x > -10 && x < W) r(ctx, '#ff5040', x + 1, b.y + 3, 1, 1); }   // occhi nel buio
+}
+function drawShadows() {
+  const now = performance.now();
+  for (const s of level.shadows) {
+    if (s.st === 0) continue; const x = sx(s.x); if (x < -200 || x > W + 20) continue;
+    const k = '#07060c', y = GROUND - 42;
+    r(ctx, '#0c140e', x - 8, y + 14, 30, 14); r(ctx, '#0c140e', x - 4, y + 8, 22, 8);   // cespuglio
+    r(ctx, k, x + 1, y, 10, 2); r(ctx, k, x + 3, y - 3, 6, 3); r(ctx, k, x + 3, y + 2, 7, 6); r(ctx, k, x + 1, y + 8, 11, 14); r(ctx, k, x + 2, y + 22, 3, 6); r(ctx, k, x + 7, y + 22, 3, 6);
+    r(ctx, C.yellow, x + 4, y + 4, 1, 1); r(ctx, C.yellow, x + 7, y + 4, 1, 1);
+    const blink = s.st === 1 && Math.floor(now / 110) % 2;
+    r(ctx, blink || s.st === 2 ? '#fff6c0' : '#555', x - 1, y + 12, 3, 3);   // la torcia
+    if (s.st === 1) { const d = s.x - (p.x + p.w); if (d < 185) textS('SALTA!', x - 14, y - 16, Math.floor(now / 80) % 2 ? C.yellow : '#fff', 1); else textS('!', x + 4, y - 14, C.red); }
+    if (s.st === 2) { for (let i = 0; i < 170; i += 2) { const h = 4 + Math.round(i * .07); r(ctx, 'rgba(255,240,170,.38)', x - 1 - i, GROUND - 13 - (h >> 1), 2, h); } r(ctx, 'rgba(255,250,210,.7)', x - 170, GROUND - 14, 170, 2); }
+  }
+  const warn = level.shadows.find(s => s.st === 1 || s.st === 2);
+  if (warn && stats.spaventi === 0 && level.shadows.indexOf(warn) === 0) hintBox(TOUCH ? 'SALTA LA LUCE DELLA TORCIA!' : 'SALTA LA LUCE DELLA TORCIA! (SPAZIO)', 40);
 }
 function drawBump(b) {
   const x = sx(b.x); if (x < -20 || x > W) return;
@@ -815,7 +914,9 @@ function drawWorld() {
     r(ctx, C.ink, tx, e.y - 13, tw, 11); r(ctx, C.red, tx + 1, e.y - 12, tw - 2, 9); text(tag, tx + 3, e.y - 11, '#fff');
   }
   for (const w of level.waters) if (!w.got) { const x = sx(w.x); if (x > -12 && x < W) ctx.drawImage(WATER, x, Math.round(w.y + Math.sin(bobT + w.x * .05) * 1.5)); }
+  if (level.bike) drawBikeNight();
   drawPlayer();
+  if (level.bike) drawShadows();
   if (level.heat && dayT() > 0) { r(ctx, `rgba(255,110,60,${(dayT() * .16).toFixed(3)})`, 0, 0, W, H); }
   if (level.heat && heat > 70) { r(ctx, `rgba(232,52,78,${((heat - 70) / 30 * .2).toFixed(3)})`, 0, 0, W, H); }
   parts.forEach(q => r(ctx, q.col, sx(q.x) | 0, q.y | 0, 2, 2));
@@ -849,9 +950,9 @@ function drawWon() {
   if (stateT < .4) return;
   ransom('OK!', 18, 4);
   textC(['SEI ARRIVATA ALL\'IPPODROMO', 'HAI RESISTITO FINO A SERA', stats.naps ? 'HAI DORMITO SOLO UN PO\'' : 'NON HAI CHIUSO OCCHIO', 'HAI VISTO TUTTO IL CONCERTO', 'SIETE ARRIVATI ALLA MACCHINA'][phase], 72, C.white, 1);
-  const lines = phase === 2 ? [['PISOLINI', stats.naps || 0], ['PLETTRI TOTALI', stats.picks], ['EURO RIMASTI', stats.euro + '€']]
+  const lines = phase === 2 ? [['NOTE PRESE', stats.note + ' SU ' + stats.noteTot], ['PISOLINI', stats.naps || 0], ['EURO RIMASTI', stats.euro + '€']]
     : phase === 3 ? [['SALTI SOTTO IL PALCO', stats.salti], ['PLETTRI TOTALI', stats.picks], ['EURO RIMASTI', stats.euro + '€']]
-    : phase === 4 ? [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['BUCHE PRESE', stats.buche], ['EURO RIMASTI', stats.euro + '€']]
+    : phase === 4 ? [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['OSTACOLI PRESI', stats.buche], ['SPAVENTI', stats.spaventi]]
     : [['PLETTRI RACCOLTI', stats.picks + ' SU ' + stats.picksTot], ['MESTIERATE SVENTATE', stats.sventate], ['EURO RIMASTI', stats.euro + '€']];
   lines.forEach(([a, b], i) => { const y = 92 + i * 14, x = Math.round(W / 2 - 100); text(a, x, y, '#c7b8d2'); const v = String(b); text(v, x + 200 - textW(v), y, C.yellow); });
   textC(['ORA VIENE IL DIFFICILE: IL CALDO.', 'ORA I MOGWAI. NON ADDORMENTARTI.', 'E ORA, FINALMENTE: I CURE.', 'ORA SI SCAPPA IN MOBIKE.', 'ULTIMA TAPPA: SI TORNA A CASA.'][phase], 146, C.cyan);
@@ -903,7 +1004,7 @@ function drawCure() {
   if (cu.mode === 'ask') {
     r(ctx, 'rgba(10,6,20,.55)', 0, 0, W, H);
     const px = sc - 100, py = 40; r(ctx, C.ink, px, py, 200, 96); r(ctx, C.paper, px + 1, py + 1, 198, 94);
-    textC('LUI TI CHIEDE:', py + 9, '#8a7a98'); textC('ANDIAMO VIA?', py + 24, C.ink, 2); textC('COSÌ EVITIAMO IL TRAFFICO.', py + 47, '#5a4a68');
+    textC('VITTO TI CHIEDE:', py + 9, '#8a7a98'); textC('ANDIAMO VIA?', py + 24, C.ink, 2); textC('COSÌ EVITIAMO IL TRAFFICO.', py + 47, '#5a4a68');
     const btn = (R, s, col) => { r(ctx, C.ink, R.x, R.y, R.w, R.h); r(ctx, col, R.x + 1, R.y + 1, R.w - 2, R.h - 2); text(s, R.x + (R.w - textW(s, 2)) / 2, R.y + 5, s === 'NO' ? C.ink : '#fff', 2); };
     const pulse = cu.t > 6 && Math.floor(now / 300) % 2;
     btn(noRect(), 'NO', pulse ? '#fff' : C.cyan);
@@ -914,11 +1015,15 @@ function drawCure() {
 
 function drawDrive() {
   const now = performance.now(), sc = W / 2;
-  NIGHT.forEach((c, i) => r(ctx, c, 0, i * 14, W, 15));
-  drawNightSky(70);
-  for (let x = 0; x < W; x++) { const q = x + dv.z * 500, y = Math.round(HOR - 12 - Math.sin(q * .021) * 6 - Math.sin(q * .053) * 3); r(ctx, '#1a1530', x, y, 1, HOR - y); }   // l'Appennino
-  r(ctx, '#0b0912', 0, HOR, W, H - HOR);
+  const tun = dv.z > TUNNEL[0] && dv.z < TUNNEL[1];
   const hw = t => 3 + t * W * .9, X = (u, t) => Math.round(sc + (u - dv.u) * hw(t));
+  if (tun) { r(ctx, '#1c1510', 0, 0, W, HOR); r(ctx, '#2a2018', 0, HOR, W, H - HOR); r(ctx, '#0a0806', X(-.3, .01), HOR - 6, X(.3, .01) - X(-.3, .01) + 2, 7); }   // in galleria
+  else {
+    NIGHT.forEach((c, i) => r(ctx, c, 0, i * 14, W, 15));
+    drawNightSky(70);
+    for (let x = 0; x < W; x++) { const q = x + dv.z * 500, y = Math.round(HOR - 12 - Math.sin(q * .021) * 6 - Math.sin(q * .053) * 3); r(ctx, '#1a1530', x, y, 1, HOR - y); }   // l'Appennino
+    r(ctx, '#0b0912', 0, HOR, W, H - HOR);
+  }
   for (let y = HOR; y < H; y++) {
     const t = (y - HOR + 1) / (H - HOR), depth = 6 / t, lw = Math.max(1, Math.round(hw(t) * .025));
     const xl = X(-1.1, t), xr = X(1.1, t); r(ctx, '#26232e', xl, y, xr - xl, 1);
@@ -928,8 +1033,15 @@ function drawDrive() {
   }
   const at = d => { const t = 6 / (d + 6); return { t, y: Math.round(HOR + t * (H - HOR)), pm: hw(t) / 3.6 }; };
   // lampioni sullo spartitraffico
+  if (tun) {   // le luci arancioni sul soffitto della galleria
+    const TD = 12, toff = dv.scroll % TD;
+    for (let k = 14; k >= 0; k--) {
+      const d = k * TD - toff, t = 6 / (d + 6); if (t > .55) continue; const y = Math.round(HOR - t * (HOR - 6)), pm = hw(t) / 3.6;
+      [-.7, .7].forEach(u => { r(ctx, 'rgba(255,170,80,.18)', X(u, t) - Math.round(pm), y - 1, Math.round(pm * 2), Math.max(2, Math.round(pm * .4))); r(ctx, '#ffb050', X(u, t) - Math.round(pm * .5), y, Math.max(1, Math.round(pm)), Math.max(1, Math.round(pm * .15))); });
+    }
+  }
   const LD = 34, off = dv.scroll % LD;
-  for (let k = 6; k >= 0; k--) {
+  for (let k = tun ? -1 : 6; k >= 0; k--) {
     const d = k * LD - off; if (d < -4) continue; const { t, y, pm } = at(d), x = X(-1.3, t), hgt = Math.round(9 * pm), ax = X(-.85, t);
     r(ctx, '#3a3546', x, y - hgt, Math.max(1, Math.round(pm * .25)), hgt); r(ctx, '#3a3546', x, y - hgt, ax - x, Math.max(1, Math.round(pm * .15)));
     const g = Math.max(2, Math.round(pm * .7)); r(ctx, 'rgba(255,180,90,.25)', ax - g * 2, y - hgt - g, g * 4, g * 3); r(ctx, '#ffc070', ax - g, y - hgt, g * 2, Math.max(1, g >> 1));
@@ -961,16 +1073,17 @@ function drawDrive() {
   // le teste, viste dal sedile dietro
   const S = 4;
   ctx.drawImage(GIBI_BACK, gx - 8 * S, H - 18 * S, 16 * S, 18 * S);
-  const c = (now / 1000) % 7, lean = c < 5.6 ? (c / 5.6) ** 2 : Math.max(0, 1 - (c - 5.6) / .2);   // la testa ciondola e si rialza di scatto
+  const c = (now / 1000) % 7, lean = dv.wake > 0 ? 0 : c < 5.6 ? (c / 5.6) ** 2 : Math.max(0, 1 - (c - 5.6) / .2);   // la testa ciondola e si rialza di scatto
   ctx.drawImage(LUI_BACK_BODY, lx - 8 * S, H - 4 * S, 16 * S, 4 * S);
-  ctx.drawImage(LUI_BACK_HEAD, lx - 8 * S + Math.round(lean * 12), H - 18 * S + Math.round(lean * 9), 16 * S, 14 * S);
+  ctx.drawImage(LUI_BACK_HEAD, lx - 8 * S + Math.round(lean * 12) + (dv.wake > 2.2 ? Math.round(Math.sin(now * .06) * 3) : 0), H - 18 * S + Math.round(lean * 9) - (dv.wake > 0 ? 3 : 0), 16 * S, 14 * S);
+  if (dv.wake > 1.6) textS('!', lx - 4, H - 18 * S - 12, C.yellow, 2);
   r(ctx, 'rgba(10,8,30,.25)', 0, 150, W, H - 150);
-  if (lean > .15) { const zz = Math.floor(now / 600) % 3; for (let i = 0; i <= zz; i++) textS('Z', lx + 30 + i * 9, H - 18 * S - 6 - i * 10, '#c7b8d2', i > 1 ? 2 : 1); }
+  if (lean > .15 && dv.wake <= 0) { const zz = Math.floor(now / 600) % 3; for (let i = 0; i <= zz; i++) textS('Z', lx + 30 + i * 9, H - 18 * S - 6 - i * 10, '#c7b8d2', i > 1 ? 2 : 1); }
   // in alto
   textS('BOLOGNA ' + Math.max(0, Math.round(100 * (1 - dv.z))) + ' KM', 8 + INSET.l + 30, 10, C.white);
   const bw = Math.min(90, W * .26), bx = W - bw - 40 - INSET.r; r(ctx, C.ink, bx - 1, 10, bw + 2, 7); r(ctx, 'rgba(255,255,255,.35)', bx, 11, bw, 5); r(ctx, C.yellow, bx, 11, Math.round(bw * dv.z), 5);
   if (dv.z < .07) hintBox(TOUCH ? 'TOCCA PER CAMBIARE CORSIA' : 'SPAZIO PER CAMBIARE CORSIA', 44);
-  else if (dv.v < .85 && Math.floor(now / 400) % 2) hintBox(TOUCH ? 'TOCCA PER SORPASSARE' : 'SPAZIO PER SORPASSARE', 44);
+  else if ((dv.danger || dv.v < .85) && Math.floor(now / 300) % 2) hintBox(TOUCH ? 'CAMION! TOCCA PER CAMBIARE CORSIA' : 'CAMION! SPAZIO PER CAMBIARE CORSIA', 44);
   if (dv.msg && dv.msgT > 0) msgBox(dv.msg, 26);
 }
 
@@ -1010,6 +1123,27 @@ function drawFine() {
   }
   if (t < 1.5) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 1.5})`; ctx.fillRect(0, 0, W, H); }
 }
+function drawMogLanes(now) {
+  const lx = [26 + INSET.l, W - 26 - INSET.r], cols = [C.pink, C.cyan];
+  lx.forEach((x, l) => {
+    r(ctx, 'rgba(10,6,24,.45)', x - 15, MOG_TOP - 6, 30, MOG_HIT - MOG_TOP + 26);
+    for (let y = MOG_TOP; y < MOG_HIT; y += 12) r(ctx, 'rgba(255,255,255,.12)', x, y, 1, 6);
+    const on = m.press[l] > 0, rc = on ? '#fff' : cols[l];
+    for (let a = 0; a < 40; a++) { const t = a / 40 * 6.283; r(ctx, rc, Math.round(x + Math.cos(t) * 11), Math.round(MOG_HIT + Math.sin(t) * 11), 2, 2); }
+    if (on) r(ctx, 'rgba(255,255,255,.25)', x - 10, MOG_HIT - 10, 20, 20);
+    text(l ? 'DX' : 'SX', x - 5, MOG_HIT + 16, '#8a7a98');
+  });
+  for (const n of m.notes) {
+    if (n.hit) continue;
+    const dt = n.t - m.t; if (dt > MOG_FALL || dt < -.25) continue;
+    const y = Math.round(MOG_HIT - dt / MOG_FALL * (MOG_HIT - MOG_TOP)), x = lx[n.lane];
+    for (let j = -7; j <= 7; j++) { const w = 7 - Math.abs(j); r(ctx, C.ink, x - w - 1, y + j, w * 2 + 2, 1); }
+    for (let j = -6; j <= 6; j++) { const w = 6 - Math.abs(j); r(ctx, cols[n.lane], x - w, y + j, w * 2, 1); }
+    r(ctx, '#fff', x - 2, y - 3, 2, 2);
+  }
+  if (m.fb) { const x = lx[m.fb.lane], s = m.fb.s, tx = Math.max(4 + INSET.l, Math.min(W - textW(s) - 4 - INSET.r, x - textW(s) / 2)); textS(s, tx, MOG_HIT - 30 - Math.round((.7 - m.fb.t) * 14), m.fb.col); }
+  if (m.combo >= 3) textC('COMBO ' + m.combo, 20, C.yellow);
+}
 const MOG_SKY = ['#120e2c', '#1a1338', '#241744', '#31194e', '#421c56', '#5a2058', '#6d2a58'];
 function drawMogwai() {
   const now = performance.now(), cres = m.cres > 0, flash = cres && Math.floor(now / 90) % 2;
@@ -1037,7 +1171,7 @@ function drawMogwai() {
     r(ctx, C.ink, ex - 2, ey - 2 + lid, 2 * k + 4, 2);
   });
   // lui dorme già
-  const lx = Math.round(sc + 74), ly = H - 76 + Math.round(Math.sin(now * .002) * 1.5);
+  const lx = Math.round(Math.min(sc + 74, W - 98 - INSET.r)), ly = H - 76 + Math.round(Math.sin(now * .002) * 1.5);
   ctx.drawImage(LUI.idle, lx, ly, 48, 78); r(ctx, SKIN, lx + 15, ly + 21, 6, 3); r(ctx, SKIN, lx + 30, ly + 21, 6, 3); r(ctx, C.ink, lx + 15, ly + 23, 6, 1); r(ctx, C.ink, lx + 30, ly + 23, 6, 1);
   const zz = Math.floor(now / 700) % 3; for (let i = 0; i <= zz; i++) text('Z', lx + 40 + i * 7, ly - 2 - i * 9, '#c7b8d2', 1 + (i > 1 ? 1 : 0));
   // sopra di tutto: progressi e avvisi
@@ -1053,8 +1187,9 @@ function drawMogwai() {
     textC('Z Z Z . . .', 70, '#c7b8d2', 2);
     return;
   }
-  if (m.p < .16) { const s = TOUCH ? 'TOCCA PER TENERE GLI OCCHI APERTI' : 'PREMI SPAZIO PER TENERE GLI OCCHI APERTI', hw = textW(s) + 12; r(ctx, 'rgba(23,16,28,.8)', (W - hw) / 2 | 0, 22, hw, 15); textC(s, 26, C.white); }
-  else if (m.open < .32 && !cres && Math.floor(now / 200) % 2) { textC('TOCCA! TOCCA!', 26, C.yellow, 2, C.ink); }
+  drawMogLanes(now);
+  if (m.t < 5) { hintBox(TOUCH ? 'TOCCA A SINISTRA O A DESTRA' : 'FRECCE SINISTRA E DESTRA', 24); hintBox('QUANDO LA NOTA ARRIVA NEL CERCHIO', 40); }
+  else if (m.open < .3 && Math.floor(now / 250) % 2) textC('NON DORMIRE!', 26, C.yellow, 2, C.ink);
   if (m.msg && m.msgT > 0) { const hw = Math.min(W - 12, textW(m.msg) + 12), mx = (W - hw) / 2 | 0; r(ctx, C.ink, mx, 196, hw, 15); r(ctx, C.paper, mx + 1, 197, hw - 2, 13); textC(m.msg, 200, C.ink); }
 }
 function draw() {
@@ -1149,13 +1284,15 @@ const AUDIO = (() => {
   api.state = () => (ac ? ac.state : 'off');
   api.setMuted = m => { api.muted = m; if (master) master.gain.value = m ? 0 : .8; };
   api.suspend = () => { if (ac && ac.state === 'running') ac.suspend(); };
-  api.sfx = n => {
+  api.sfx = (n, a) => {
     if (!ac || ac.state !== 'running') return; const t = ac.currentTime;
     if (n === 'jump') { const o = tone('square', 300, t, .14, .08); o.frequency.exponentialRampToValueAtTime(720, t + .12); }
     if (n === 'pick') { tone('square', 988, t, .06, .06); tone('square', 1319, t + .06, .1, .06); }
     if (n === 'stomp') { const o = tone('square', 520, t, .18, .1); o.frequency.exponentialRampToValueAtTime(120, t + .16); noise(t, .1, .15); }
     if (n === 'hurt') { const o = tone('sawtooth', 240, t, .3, .1); o.frequency.exponentialRampToValueAtTime(70, t + .28); }
     if (n === 'blink') tone('sine', 660, t, .06, .05);
+    if (n === 'torcia') { noise(t, .25, .12); tone('square', 1200, t, .08, .04); }
+    if (n === 'nota') { tone('triangle', N(a ? 74 : 69), t, .5, .09); tone('sine', N(a ? 81 : 76), t, .35, .03); }
     if (n === 'win') [69, 72, 76, 81].forEach((m, i) => tone('square', N(m), t + i * .12, .22, .08));
   };
   return api;
@@ -1177,7 +1314,7 @@ function readTouches(e) {
   const b = canvas.getBoundingClientRect(), z = zones();
   input.tL = input.tR = input.tJ = false;
   const playing = state === 'play' || state === 'ending';
-  if (state === 'mogwai' || state === 'cure' || state === 'drive') { if (e.touches.length) input.tJ = true; }
+  if (state === 'cure' || state === 'drive') { if (e.touches.length) input.tJ = true; }
   else if (playing && level.bike) { for (const t of e.touches) if (!(t.clientX - b.left > b.width - 56 && t.clientY - b.top < 50)) input.tJ = true; }
   else if (playing) for (const t of e.touches) {
     const x = t.clientX - b.left, y = t.clientY - b.top;
@@ -1205,6 +1342,7 @@ window.addEventListener('touchstart', e => {
   if (state === 'play') for (const t of e.changedTouches) if (t.clientX - b.left > b.width - 56 && t.clientY - b.top < 50) AUDIO.setMuted(!AUDIO.muted);
   readTouches(e);
   if (state === 'cure') for (const t of e.changedTouches) cureTap(...toCanvas(t));
+  if (state === 'mogwai') for (const t of e.changedTouches) mogTap(toCanvas(t)[0] < W / 2 ? 0 : 1);
 }, { passive: false });
 window.addEventListener('touchmove', e => { e.preventDefault(); readTouches(e); if (state === 'cure') for (const t of e.touches) cureNear(...toCanvas(t)); }, { passive: false });
 window.addEventListener('click', () => AUDIO.unlock());
@@ -1212,7 +1350,8 @@ window.addEventListener('touchend', e => { AUDIO.unlock(); if (e.touches.length 
 window.addEventListener('touchcancel', readTouches);
 window.addEventListener('mousedown', e => {
   AUDIO.unlock();
-  if (state === 'mogwai' || state === 'cure' || state === 'drive') input.jumpPressed = true;
+  if (state === 'cure' || state === 'drive') input.jumpPressed = true;
+  if (state === 'mogwai') mogTap(toCanvas(e)[0] < W / 2 ? 0 : 1);
   if (state === 'cure') cureTap(...toCanvas(e));
   if (canAdvance()) armed = true;
   if (!TOUCH || state !== 'play') action();
@@ -1224,6 +1363,7 @@ window.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.key === 'ArrowLeft') input.keyL = true;
   if (e.key === 'ArrowRight') input.keyR = true;
+  if (state === 'mogwai' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) mogTap(e.key === 'ArrowLeft' ? 0 : 1);
   if (e.key === ' ' || e.key === 'ArrowUp') {
     input.keyJ = true; if (canAdvance()) armed = true;
     if (state === 'cure' && cu.mode === 'ask' && cu.t > .4) cureNo();   // da tastiera il SÌ non si raggiunge proprio
